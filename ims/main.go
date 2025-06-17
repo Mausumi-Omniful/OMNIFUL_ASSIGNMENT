@@ -32,11 +32,15 @@ func main() {
 	}
 
 	// AutoMigrate Inventory model
-	if err := db.DB.GetMasterDB(context.Background()).AutoMigrate(&models.Inventory{}); err != nil {
-		panic("❌ AutoMigration failed: " + err.Error())
-	} else {
-		fmt.Println("✅ Inventory table migrated successfully")
-	}
+	if err := db.DB.GetMasterDB(context.Background()).AutoMigrate(
+	&models.Inventory{},
+	&models.SKU{},
+	&models.Hub{},
+); err != nil {
+	panic("❌ AutoMigration failed: " + err.Error())
+} else {
+	fmt.Println("✅ Tables migrated: Inventory, SKU, Hub")
+}
 
 	// Initialize HTTP server
 	server := http.InitializeServer(
