@@ -48,4 +48,51 @@ func GetInventoryByID(c *gin.Context) {
 	c.JSON(200, inventory)
 }
 
+func UpdateInventory(c *gin.Context) {
+	id := c.Param("id")
+
+	var inventory models.Inventory
+	if err := db.DB.GetMasterDB(context.Background()).First(&inventory, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Inventory not found"})
+		return
+	}
+
+	var updatedData models.Inventory
+	if err := c.ShouldBindJSON(&updatedData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	inventory.ProductID = updatedData.ProductID
+	inventory.SKU = updatedData.SKU
+	inventory.Quantity = updatedData.Quantity
+	inventory.Location = updatedData.Location
+
+	if err := db.DB.GetMasterDB(context.Background()).Save(&inventory).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, inventory)
+}
+
+// DeleteInventory deletes an inventory item by ID
+func DeleteInventory(c *gin.Context) {
+	id := c.Param("id")
+
+	// Try to delete the inventory record with matching ID
+	result := db.DB.GetMasterDB(context.Background()).Delete(&models.Inventory{}, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete inventory"})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Inventory not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Inventory deleted successfully"})
+}
+
 
