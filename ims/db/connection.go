@@ -25,15 +25,16 @@ func InitPostgres() error {
 		SkipDefaultTransaction: true,
 	}
 
-	// Basic validation
+	
 	if master.Host == "" || master.Port == "" || master.Username == "" || master.Password == "" || master.Dbname == "" {
 		return errors.New("missing DB config in .env")
 	}
 
-	var slaves []postgres.DBConfig // no slaves for now
+	var slaves []postgres.DBConfig
 	DB = postgres.InitializeDBInstance(master, &slaves)
 	return nil
 }
+
 
 // GetDB allows external access
 func GetDB() *postgres.DbCluster {

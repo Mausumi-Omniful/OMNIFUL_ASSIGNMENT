@@ -1,13 +1,11 @@
-// main.go
 package main
 
 import (
-	"context"
 	"fmt"
 	"time"
-
+    
 	"github.com/Mausumi-Omniful/ims/db"
-	"github.com/Mausumi-Omniful/ims/models"
+	"github.com/Mausumi-Omniful/ims/redisclient"
 	"github.com/Mausumi-Omniful/ims/routes"
 
 	"github.com/joho/godotenv"
@@ -15,32 +13,47 @@ import (
 )
 
 func main() {
-	// Load environment variables from .env
+	// Load .env file
 	err := godotenv.Load("../.env")
 	if err != nil {
-		fmt.Println("⚠️ Warning: Error loading .env file:", err)
+		fmt.Println(err)
 	} else {
-		fmt.Println("✅ .env loaded successfully")
+		fmt.Println(".env loaded")
 	}
+	
+
 
 	// Initialize PostgreSQL connection
 	if err := db.InitPostgres(); err != nil {
-		fmt.Println("❌ Postgres connection failed:", err)
-		panic("Postgres connection failed: " + err.Error())
+		fmt.Println("Postgres connection failed:", err)
 	} else {
-		fmt.Println("✅ Postgres connected successfully")
+		fmt.Println("Postgres connected successfully")
 	}
 
-	// AutoMigrate Inventory model
-	if err := db.DB.GetMasterDB(context.Background()).AutoMigrate(
-	&models.Inventory{},
-	&models.SKU{},
-	&models.Hub{},
-); err != nil {
-	panic("❌ AutoMigration failed: " + err.Error())
-} else {
-	fmt.Println("✅ Tables migrated: Inventory, SKU, Hub")
-}
+
+
+	// migrations
+     db.RunMigrations()
+
+  
+
+	// Initialize Redis client
+	if err := redisclient.InitRedis(); err != nil {
+		fmt.Println("Redis initialization failed:", err)
+	} else {
+		fmt.Println("Redis connected successfully")
+	}
+
+	
+	defer func() {
+		if err := redisclient.Close(); err != nil {
+			fmt.Println("Error closing Redis client:", err)
+		} else {
+			fmt.Println("Redis client closed successfully")
+		}
+	}()
+
+
 
 	// Initialize HTTP server
 	server := http.InitializeServer(
@@ -51,15 +64,12 @@ func main() {
 		false,
 	)
 
-	fmt.Println("🚀 IMS server is initializing on port 8083...")
+	fmt.Println("IMS server is running on port 8083...")
 
-	// Health check route
-	// server.GET("/ping", func(c *gin.Context) {
-	// 	c.JSON(200, gin.H{"message": "pong"})
-	// })
-
-	// Register inventory routes - pass *http.Server, NOT *gin.Engine
+	
+	// Register routes
 	routes.RegisterRoutes(server)
+
 
 	// Start server
 	if err := server.StartServer("ims-service"); err != nil {

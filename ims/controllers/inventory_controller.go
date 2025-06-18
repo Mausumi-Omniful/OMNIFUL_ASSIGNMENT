@@ -6,19 +6,23 @@ import (
 	"github.com/Mausumi-Omniful/ims/db"
 	"github.com/Mausumi-Omniful/ims/models"
 	"context"
+	
+	"gorm.io/gorm/clause"
+	"github.com/Mausumi-Omniful/ims/redisclient"
 )
 
-// CreateInventory handles the creation of an inventory item
+
+
+// CreateInventory
 func CreateInventory(c *gin.Context) {
 	var item models.Inventory
 
-	// Bind JSON body to item struct
 	if err := c.ShouldBindJSON(&item); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Save the item to the database
+	
 	if err := db.DB.GetMasterDB(c.Request.Context()).Create(&item).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create inventory item"})
 		return
@@ -27,16 +31,35 @@ func CreateInventory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Inventory item created successfully", "item": item})
 }
 
+
+
+// GetInventories
 func GetInventories(c *gin.Context) {
-	var inventories []models.Inventory
-	err := db.DB.GetMasterDB(context.Background()).Find(&inventories).Error
-	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to fetch inventories"})
-		return
-	}
-	c.JSON(200, inventories)
+    sku := c.Query("sku")
+    location := c.Query("location")
+
+    var inv models.Inventory
+    err := db.DB.GetMasterDB(c.Request.Context()).Where("sku = ? AND location = ?", sku, location).First(&inv).Error
+
+    if err != nil {
+        // default to quantity 0 if not found
+        c.JSON(http.StatusOK, gin.H{
+            "sku":      sku,
+            "location": location,
+            "quantity": 0,
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "sku":      inv.SKU,
+        "location": inv.Location,
+        "quantity": inv.Quantity,
+    })
 }
 
+
+// GetInventoryByID
 func GetInventoryByID(c *gin.Context) {
 	id := c.Param("id")
 	var inventory models.Inventory
@@ -48,6 +71,9 @@ func GetInventoryByID(c *gin.Context) {
 	c.JSON(200, inventory)
 }
 
+
+
+// UpdateInventory
 func UpdateInventory(c *gin.Context) {
 	id := c.Param("id")
 
@@ -76,11 +102,13 @@ func UpdateInventory(c *gin.Context) {
 	c.JSON(http.StatusOK, inventory)
 }
 
-// DeleteInventory deletes an inventory item by ID
+
+
+// DeleteInventory
 func DeleteInventory(c *gin.Context) {
 	id := c.Param("id")
 
-	// Try to delete the inventory record with matching ID
+	
 	result := db.DB.GetMasterDB(context.Background()).Delete(&models.Inventory{}, id)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete inventory"})
@@ -96,3 +124,46 @@ func DeleteInventory(c *gin.Context) {
 }
 
 
+
+
+
+//UpsertInventory
+func UpsertInventory(c *gin.Context) {
+	var inv models.Inventory
+	ctx := c.Request.Context()
+
+	
+	if err := c.ShouldBindJSON(&inv); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate SKU from Redis
+	skuKey := "sku_code:" + inv.SKU
+	skuExists, err := redisclient.Client.Exists(ctx, skuKey)
+	if err != nil || skuExists == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid SKU"})
+		return
+	}
+
+	// Validate Location from Redis
+	hubKey := "hub_location:" + inv.Location
+	hubExists, err := redisclient.Client.Exists(ctx, hubKey)
+	if err != nil || hubExists == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Location"})
+		return
+	}
+
+	// Atomic upsert
+	err = db.DB.GetMasterDB(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "sku"}, {Name: "location"}},
+		DoUpdates: clause.AssignmentColumns([]string{"quantity", "updated_at"}),
+	}).Create(&inv).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upsert inventory"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Inventory upserted", "inventory": inv})
+}

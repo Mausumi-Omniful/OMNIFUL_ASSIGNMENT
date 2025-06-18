@@ -6,11 +6,31 @@ import (
 )
 
 func RegisterRoutes(server *http.Server) {
+	// Inventory routes
+	inv := server.Group("/inventory")
+    inv.GET("/", controllers.GetInventories)
+	inv.GET("/:id", controllers.GetInventoryByID)
+	inv.PUT("/:id", controllers.UpdateInventory)
+	inv.POST("/upsert", controllers.UpsertInventory)
+	inv.DELETE("/:id", controllers.DeleteInventory)
 
-	server.POST("/inventories", controllers.CreateInventory)
-	server.GET("/inventories", controllers.GetInventories)
-    server.GET("/inventories/:id", controllers.GetInventoryByID)
-    server.PUT("/inventories/:id", controllers.UpdateInventory)
-	server.DELETE("/inventories/:id", controllers.DeleteInventory)
 
+	
+	// sku routes
+	sku := server.Group("/sku")
+	sku.POST("/", controllers.CreateSKU)
+	sku.GET("/", controllers.GetSKUs)
+	sku.PUT("/:id", controllers.UpdateSKU)
+	sku.DELETE("/:id", controllers.DeleteSKU)
+
+
+
+
+	// hub routes
+	hub := server.Group("/hub")
+	hub.POST("/", controllers.CreateHub)
+	hub.GET("/", controllers.GetHubs)
+	hub.GET("/:id", controllers.GetHubByID)
+	hub.PUT("/:id", controllers.UpdateHub)
+	hub.DELETE("/:id", controllers.DeleteHub)
 }
