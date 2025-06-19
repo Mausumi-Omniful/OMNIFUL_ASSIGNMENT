@@ -12,7 +12,7 @@ import (
 var Client *redis.Client
 
 func InitRedis() error {
-	host := os.Getenv("REDIS_HOST")
+	host := os.Getenv("REDIS_ADDR")
 	if host == "" {
 		host = "localhost:6379" 
 	}

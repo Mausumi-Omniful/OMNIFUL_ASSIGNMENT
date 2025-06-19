@@ -1,67 +1,52 @@
 services:
-  
-  postgresql:
-    image: postgres:16
-    container_name: postgresql_db
+  postgres:
+    image: postgres:13
+    container_name: postgres_db
     environment:
-      POSTGRES_DB: ${DB_HOST}
-      POSTGRES_USER: ${DB_NAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
-      - "${DB_PORT}:5432"
+      - "5434:5432" 
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app_network
+      - pgdata:/var/lib/postgresql/data
     restart: always
 
-  
   redis:
     image: redis:7.0
-    container_name: redis_cache
+    container_name: redis_db
     ports:
-      - "6379:6379" 
-    volumes:
-      - redis_data:/data
-    networks:
-      - app_network
+      - "6380:6379" 
     restart: always
 
-  
+
   mongodb:
-    image: mongo:7.0.11
-    container_name: mongodb_db
-    environment:
-      
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      
-      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
+    image: mongo:6.0
+    platform: linux/amd64  
+    container_name: mongodb_container
     ports:
-      - "27017:27017"
+      - "27018:27017"       
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: myuser
+      MONGO_INITDB_ROOT_PASSWORD: mypassword
+      MONGO_INITDB_DATABASE: mydb
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - app_network
     restart: always
 
-  
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.3
-    container_name: zookeeper_server
-    ports:
-      - "2181:2181"
+    image: confluentinc/cp-zookeeper:7.2.1
+    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - app_network
+    ports:
+      - "2181:2181"  
     restart: always
 
-  
   kafka:
-    image: confluentinc/cp-kafka:7.5.3
-    container_name: kafka_broker
+    image: confluentinc/cp-kafka:7.2.1
+    container_name: kafka
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -75,15 +60,10 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     depends_on:
       - zookeeper
-    networks:
-      - app_network
+    
     restart: always
 
-volumes:
-  postgres_data:
-  redis_data:
-  mongodb_data:
 
-networks:
-  app_network:
-    driver: bridge
+volumes:
+  pgdata:
+  mongodb_data:
