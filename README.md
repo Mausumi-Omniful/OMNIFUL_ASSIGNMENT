@@ -39,6 +39,10 @@ Omniful-Assignment/
   │   │   └─ redis_client.go
   │   └─ routes/
   │       └─ routes.go
+  ├─ oms/
+  │   ├─ main.go
+  │   ├─ go.mod
+  │   └─ go.sum
   └─ README.md
 ```
 
@@ -60,8 +64,16 @@ Omniful-Assignment/
    docker-compose up -d
    ```
 
+   This will start the following containers:
+   - PostgreSQL (port 5434)
+   - Redis (port 6380)
+   - MongoDB, Zookeeper, Kafka (for future/other services)
+
 3. **The IMS service will be available at:**
    - **URL:** http://localhost:8083
+
+   The OMS service (currently a placeholder) will be available at:
+   - **URL:** http://localhost:8080
 
 ## Running Locally (without Docker)
 
@@ -72,14 +84,14 @@ Omniful-Assignment/
    ```
 
 2. **Set up environment variables:**
-   - Copy `.env.example` to `.env` (if available) or create a `.env` file with your configuration.
+   - Create a `.env` file in the project root with your configuration. There is no `.env.example` file provided, so refer to the variables below.
 
 3. **Run the application:**
    ```bash
    go run main.go
    ```
 
-## API Endpoints
+## API Endpoints (IMS)
 
 ### Hub Management
 - `POST /hub/` - Create a new hub
@@ -133,6 +145,8 @@ Example for checking inventory:
 GET http://localhost:8083/inventory/?sku=TESTSKU&location=TESTLOC
 ```
 
-## License
+## Notes
 
-MIT 
+- The `oms` directory contains a placeholder service for Order Management. It currently only returns a static message and is not fully implemented.
+- Only the IMS service is fully functional at this time.
+
