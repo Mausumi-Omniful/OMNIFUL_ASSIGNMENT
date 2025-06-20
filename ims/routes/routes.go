@@ -8,12 +8,11 @@ import (
 func RegisterRoutes(server *http.Server) {
 	// Inventory routes
 	inv := server.Group("/inventory")
+	inv.POST("/", controllers.CreateInventory)
     inv.GET("/", controllers.GetInventories)
-	inv.GET("/:id", controllers.GetInventoryByID)
 	inv.PUT("/:id", controllers.UpdateInventory)
-	inv.POST("/upsert", controllers.UpsertInventory)
 	inv.DELETE("/:id", controllers.DeleteInventory)
-
+    inv.POST("/upsert", controllers.UpsertInventory)
 
 	
 	// sku routes
@@ -30,7 +29,6 @@ func RegisterRoutes(server *http.Server) {
 	hub := server.Group("/hub")
 	hub.POST("/", controllers.CreateHub)
 	hub.GET("/", controllers.GetHubs)
-	hub.GET("/:id", controllers.GetHubByID)
 	hub.PUT("/:id", controllers.UpdateHub)
 	hub.DELETE("/:id", controllers.DeleteHub)
 }

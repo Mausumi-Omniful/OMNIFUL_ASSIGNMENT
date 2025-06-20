@@ -15,7 +15,7 @@ import (
 func main() {
 	// Load .env file
 	err := godotenv.Load("../.env")
-	if err != nil {
+	if err!= nil {
 		fmt.Println(err)
 	} else {
 		fmt.Println(".env loaded")
@@ -24,7 +24,8 @@ func main() {
 
 
 	// Initialize PostgreSQL connection
-	if err := db.InitPostgres(); err != nil {
+	err= db.InitPostgres()
+	if err != nil {
 		fmt.Println("Postgres connection failed:", err)
 	} else {
 		fmt.Println("Postgres connected successfully")
@@ -57,7 +58,7 @@ func main() {
 
 	// Initialize HTTP server
 	server := http.InitializeServer(
-		":8083",
+		":8084",
 		10*time.Second,
 		10*time.Second,
 		70*time.Second,

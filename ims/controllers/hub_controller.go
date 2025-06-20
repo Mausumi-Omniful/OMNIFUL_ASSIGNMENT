@@ -2,15 +2,15 @@ package controllers
 
 import (
 	"context"
-	"net/http"
-     "fmt"
-	 "time"
+	"encoding/json"
+
+	
+	"time"
+
 	"github.com/Mausumi-Omniful/ims/db"
 	"github.com/Mausumi-Omniful/ims/models"
-	"github.com/gin-gonic/gin"
 	"github.com/Mausumi-Omniful/ims/redisclient"
-	
-
+	"github.com/gin-gonic/gin"
 )
 
 // CreateHub
@@ -18,26 +18,25 @@ func CreateHub(c *gin.Context) {
 	var hub models.Hub
 
 	
-	if err := c.ShouldBindJSON(&hub); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err := c.ShouldBindJSON(&hub)
+	if err!=nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Save to Postgres
-	if err := db.DB.GetMasterDB(c.Request.Context()).Create(&hub).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create hub"})
+	result:=db.DB.GetMasterDB(c.Request.Context()).Create(&hub) 
+	if result.Error !=nil{
+		c.JSON(500, gin.H{"error": "Failed to create hub"})
 		return
 	}
-
-	
-	// Cache hub location in Redis
-    cacheKey := fmt.Sprintf("hub_location:%s", hub.Location)
-    _, _ = redisclient.Client.Set(c.Request.Context(), cacheKey, "true", time.Hour)
-
-
-
-
-	c.JSON(http.StatusOK, gin.H{"message": "Hub created", "hub": hub})
+	go func() {
+		var updated []models.Hub
+		db.DB.GetMasterDB(context.Background()).Find(&updated)
+		data, err:= json.Marshal(updated)
+		if err== nil {
+			redisclient.Client.Set(context.Background(),"All_hubs",string(data),1*time.Hour)
+		}
+	}()
+	c.JSON(200, gin.H{"message":"Hub created","hub": hub})
 }
 
 
@@ -47,36 +46,50 @@ func CreateHub(c *gin.Context) {
 // GetHubs
 func GetHubs(c *gin.Context) {
 	var hubs []models.Hub
+	ctx:= context.Background()
+	cacheKey:="All_hubs"
+
+	cached,err:= redisclient.Client.Get(ctx, cacheKey)
+	if err==nil {
+		if err := json.Unmarshal([]byte(cached), &hubs); err == nil {
+			c.JSON(200, gin.H{
+				"source": "cache",
+				"data": hubs,
+			})
+			return
+		}
+	}
+
 	query := db.DB.GetMasterDB(c.Request.Context())
 
+	tenantID:= c.Query("tenant_id")
+	if tenantID!= "" {
+		query= query.Where("tenant_id = ?", tenantID)
+	}
+	sellerID := c.Query("seller_id")
+	if sellerID !="" {
+		query= query.Where("seller_id = ?", sellerID)
+	}
+
+     res:=query.Find(&hubs)
+	 if res.Error!= nil {
+		c.JSON(500,gin.H{"error":"Failed to fetch hubs"})
+		return
+	}
+
 	
-	if tenantID := c.Query("tenant_id"); tenantID != "" {
-		query = query.Where("tenant_id = ?", tenantID)
-	}
-	if sellerID := c.Query("seller_id"); sellerID != "" {
-		query = query.Where("seller_id = ?", sellerID)
+	data,err:= json.Marshal(hubs)
+	if err==nil{
+	  _, _ =redisclient.Client.Set(ctx, cacheKey, string(data), 1*time.Hour)
 	}
 
-	if err := query.Find(&hubs).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch hubs"})
-		return
-	}
 
-	c.JSON(http.StatusOK, hubs)
+	c.JSON(200, gin.H{
+		"source": "database",
+		"data": hubs,
+	})
 }
 
-
-
-// GetHubByID
-func GetHubByID(c *gin.Context) {
-	id := c.Param("id")
-	var hub models.Hub
-	if err := db.DB.GetMasterDB(context.Background()).First(&hub, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Hub not found"})
-		return
-	}
-	c.JSON(http.StatusOK, hub)
-}
 
 
 
@@ -84,13 +97,15 @@ func GetHubByID(c *gin.Context) {
 func UpdateHub(c *gin.Context) {
 	id := c.Param("id")
 	var hub models.Hub
-	if err := db.DB.GetMasterDB(context.Background()).First(&hub, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Hub not found"})
+	find:= db.DB.GetMasterDB(context.Background()).First(&hub, id)
+	if find.Error!= nil {
+		c.JSON(400,gin.H{"error": "Hub not found"})
 		return
 	}
 	var updated models.Hub
-	if err := c.ShouldBindJSON(&updated); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	update:= c.ShouldBindJSON(&updated) 
+	if update!= nil {
+		c.JSON(400,gin.H{"error": update.Error()})
 		return
 	}
 
@@ -99,11 +114,21 @@ func UpdateHub(c *gin.Context) {
 	hub.TenantID = updated.TenantID
 	hub.SellerID = updated.SellerID
 
-	if err := db.DB.GetMasterDB(context.Background()).Save(&hub).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update hub"})
+	res:= db.DB.GetMasterDB(context.Background()).Save(&hub) 
+	if res.Error!= nil {
+		c.JSON(500, gin.H{"error": "Failed to update hub"})
 		return
 	}
-	c.JSON(http.StatusOK, hub)
+
+	go func() {
+		var updated []models.Hub
+		db.DB.GetMasterDB(context.Background()).Find(&updated)
+		data, err:= json.Marshal(updated)
+		if err== nil {
+			redisclient.Client.Set(context.Background(),"All_hubs",string(data),1*time.Hour)
+		}
+	}()
+	c.JSON(200,hub)
 }
 
 
@@ -112,9 +137,19 @@ func UpdateHub(c *gin.Context) {
 // DeleteHub
 func DeleteHub(c *gin.Context) {
 	id := c.Param("id")
-	if err := db.DB.GetMasterDB(context.Background()).Delete(&models.Hub{}, id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete hub"})
+	res:= db.DB.GetMasterDB(context.Background()).Delete(&models.Hub{}, id)
+	if res.Error!= nil {
+		c.JSON(500,gin.H{"error": "Failed to delete hub"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Hub deleted"})
+
+	go func() {
+		var updated []models.Hub
+		db.DB.GetMasterDB(context.Background()).Find(&updated)
+		data, err:= json.Marshal(updated)
+		if err== nil {
+			redisclient.Client.Set(context.Background(),"All_hubs",string(data),1*time.Hour)
+		}
+	}()
+	c.JSON(200,gin.H{"message": "Hub deleted"})
 }

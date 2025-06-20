@@ -12,7 +12,6 @@ CREATE TABLE skus (
     id SERIAL PRIMARY KEY,
     code TEXT UNIQUE NOT NULL,
     name TEXT,
-    sku_code TEXT,
     description TEXT,
     tenant_id TEXT,
     seller_id TEXT

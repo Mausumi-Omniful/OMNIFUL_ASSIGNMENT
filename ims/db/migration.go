@@ -18,14 +18,15 @@ func RunMigrations() {
 	)
 
 	
-	migrationPath := "file://migrations"
+	migrationPath:="file://migrations"
 
-	migrator, err := migration.InitializeMigrate(migrationPath, dbURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize migration tool: %v", err)
+	migrator,err:= migration.InitializeMigrate(migrationPath, dbURL)
+	if err!= nil {
+		log.Fatalf("Failed to initialize migrator: %v", err)
 	}
 
-	if err := migrator.Up(); err != nil {
+	err = migrator.Up()
+	if err != nil {
 		log.Fatalf("Failed to apply migrations: %v", err)
 	}
 

@@ -1,11 +1,10 @@
 package controllers
 
 import (
-	"time"
+	
 	"context"
-	"net/http"
-	"fmt"
-    
+	"encoding/json"
+    "time"
 	"github.com/Mausumi-Omniful/ims/db"
 	"github.com/Mausumi-Omniful/ims/models"
 	"github.com/gin-gonic/gin"
@@ -17,22 +16,27 @@ import (
 // CreateSKU
 func CreateSKU(c *gin.Context) {
 	var sku models.SKU
-	if err := c.ShouldBindJSON(&sku); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	err := c.ShouldBindJSON(&sku)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if err := db.DB.GetMasterDB(context.Background()).Create(&sku).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create SKU"})
+	res:= db.DB.GetMasterDB(context.Background()).Create(&sku)
+	if res.Error!= nil {
+		c.JSON(500, gin.H{"error": "Failed to create SKU"})
 		return
 	}
 
-	// cache in Redis
-	cacheKey := fmt.Sprintf("sku_code:%s", sku.Code)
-    _, _ = redisclient.Client.Set(c.Request.Context(), cacheKey, "yes", time.Hour)
+	go func() {
+		var updated []models.SKU
+		db.DB.GetMasterDB(context.Background()).Find(&updated)
+		data, err:= json.Marshal(updated)
+		if err== nil {
+			redisclient.Client.Set(context.Background(),"All_skus",string(data),1*time.Hour)
+		}
+	}()
 
-
-
-	c.JSON(http.StatusOK, gin.H{"message": "SKU created", "sku": sku})
+	c.JSON(200, gin.H{"message": "SKU created", "sku": sku})
 }
 
 
@@ -42,24 +46,50 @@ func CreateSKU(c *gin.Context) {
 // GetSKUs
 func GetSKUs(c *gin.Context) {
 	var skus []models.SKU
+	ctx:= context.Background()
+	cacheKey:= "All_skus"
+	cached,err:= redisclient.Client.Get(ctx, cacheKey)
+	if err == nil {
+		err := json.Unmarshal([]byte(cached), &skus)
+		if err == nil {
+			c.JSON(200, gin.H{
+				"source": "cache",
+				"data": skus,
+			})
+			return
+		}
+	}
 	query := db.DB.GetMasterDB(c.Request.Context())
 
-	if tenantID := c.Query("tenant_id"); tenantID != "" {
-		query = query.Where("tenant_id = ?", tenantID)
+	tenantID := c.Query("tenant_id")
+	if tenantID !="" {
+		query =query.Where("tenant_id = ?", tenantID)
 	}
-	if sellerID := c.Query("seller_id"); sellerID != "" {
+    sellerID := c.Query("seller_id")
+	if sellerID !="" {
 		query = query.Where("seller_id = ?", sellerID)
 	}
-	if skuCode := c.Query("sku_code"); skuCode != "" {
-		query = query.Where("sku_code = ?", skuCode)
+	skuCode := c.Query("sku_code")
+	if skuCode!="" {
+		query =query.Where("sku_code = ?", skuCode)
 	}
 
-	if err := query.Find(&skus).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch SKUs"})
+	res:= query.Find(&skus)
+	if res.Error!= nil {
+		c.JSON(500,gin.H{"error":"Failed to fetch SKUs"})
 		return
 	}
 
-	c.JSON(http.StatusOK, skus)
+	data,err:= json.Marshal(skus)
+	if err==nil{
+	  _, _ =redisclient.Client.Set(ctx, cacheKey, string(data), 1*time.Hour)
+	}
+
+
+	c.JSON(200, gin.H{
+		"source": "database",
+		"data": skus,
+	})
 }
 
 
@@ -70,27 +100,35 @@ func UpdateSKU(c *gin.Context) {
 	id := c.Param("id")
 	var sku models.SKU
 	if err := db.DB.GetMasterDB(context.Background()).First(&sku, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "SKU not found"})
+		c.JSON(404,gin.H{"error": "SKU not found"})
 		return
 	}
 	var updated models.SKU
 	if err := c.ShouldBindJSON(&updated); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(400,gin.H{"error": err.Error()})
 		return
 	}
 
 	sku.Code = updated.Code
 	sku.Name = updated.Name
-	sku.SKUCode = updated.SKUCode
 	sku.Description = updated.Description
 	sku.TenantID = updated.TenantID
 	sku.SellerID = updated.SellerID
 
 	if err := db.DB.GetMasterDB(context.Background()).Save(&sku).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update SKU"})
+		c.JSON(500,gin.H{"error": "Failed to update SKU"})
 		return
 	}
-	c.JSON(http.StatusOK, sku)
+
+	go func() {
+		var updated []models.SKU
+		db.DB.GetMasterDB(context.Background()).Find(&updated)
+		data, err:= json.Marshal(updated)
+		if err== nil {
+			redisclient.Client.Set(context.Background(),"All_skus",string(data),1*time.Hour)
+		}
+	}()
+	c.JSON(200,sku)
 }
 
 
@@ -98,11 +136,21 @@ func UpdateSKU(c *gin.Context) {
 // DeleteSKU
 func DeleteSKU(c *gin.Context) {
 	id := c.Param("id")
-	if err := db.DB.GetMasterDB(context.Background()).Delete(&models.SKU{}, id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete SKU"})
+	res:= db.DB.GetMasterDB(context.Background()).Delete(&models.SKU{}, id)
+	if res.Error!= nil {
+		c.JSON(500,gin.H{"error": "Failed to delete SKU"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "SKU deleted"})
+
+	go func() {
+		var updated []models.SKU
+		db.DB.GetMasterDB(context.Background()).Find(&updated)
+		data, err:= json.Marshal(updated)
+		if err== nil {
+			redisclient.Client.Set(context.Background(),"All_skus",string(data),1*time.Hour)
+		}
+	}()
+	c.JSON(200,gin.H{"message":"SKU deleted"})
 }
 
 

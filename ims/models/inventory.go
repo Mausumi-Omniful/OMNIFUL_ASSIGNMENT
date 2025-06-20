@@ -6,14 +6,14 @@ import (
 )
 
 type Inventory struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	ProductID string         `gorm:"not null" json:"product_id"`
+	ID uint`json:"id"`
+	ProductID string`json:"product_id"`
 
-	SKU       string         `gorm:"not null;index:idx_sku_location,unique" json:"sku"`       
-	Location  string         `gorm:"not null;index:idx_sku_location,unique" json:"location"`  
+	SKU string`json:"sku"`       
+	Location  string`json:"location"`  
 
-	Quantity  int            `gorm:"not null" json:"quantity"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	Quantity  int`json:"quantity"`
+	CreatedAt time.Time`json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-"`
 }
