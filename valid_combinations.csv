@@ -1,0 +1,6 @@
+sku,location,tenant_id,seller_id
+SKU008,mausmi,T001,S001
+s003,mausmi,T001,S001
+s003,mausmi,tenant1,seller1
+s003,mausmi,tenant2,seller2
+s003,mausmi,tenant3,seller3 
