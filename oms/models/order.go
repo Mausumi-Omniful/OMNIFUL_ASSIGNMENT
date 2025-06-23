@@ -6,21 +6,18 @@ import (
 	"time"
 )
 
-// OrderStatus represents the current status of an order
+
 type OrderStatus string
 
 const (
-	// OrderStatusOnHold - Initial state when order is created from CSV
 	OrderStatusOnHold OrderStatus = "on_hold"
-
-	// OrderStatusNewOrder - Order is confirmed and inventory is allocated
 	OrderStatusNewOrder OrderStatus = "new_order"
-
-	// OrderStatusCancelled - Order is cancelled due to validation failure
-	OrderStatusCancelled OrderStatus = "cancelled"
+    OrderStatusCancelled OrderStatus = "cancelled"
 )
 
-// IsValid checks if the order status is valid
+
+
+
 func (s OrderStatus) IsValid() bool {
 	switch s {
 	case OrderStatusOnHold, OrderStatusNewOrder, OrderStatusCancelled:
@@ -30,7 +27,11 @@ func (s OrderStatus) IsValid() bool {
 	}
 }
 
-// Order represents an order in the system
+
+
+
+
+
 type Order struct {
 	ID        string      `json:"id"`
 	SKU       string      `json:"sku"`
@@ -42,12 +43,14 @@ type Order struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-// generateOrderID creates a unique order ID
-func generateOrderID() string {
-	// Use timestamp for uniqueness
-	timestamp := time.Now().UnixNano()
 
-	// Add random string for additional uniqueness
+
+
+
+// generateOrderID 
+func generateOrderID() string {
+
+	timestamp := time.Now().UnixNano()
 	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	randomStr := make([]byte, 6)
 	for i := range randomStr {
@@ -57,7 +60,10 @@ func generateOrderID() string {
 	return fmt.Sprintf("ORD-%d-%s", timestamp, string(randomStr))
 }
 
-// NewOrder creates a new order with default values
+
+
+
+// NewOrder
 func NewOrder(sku, location, tenantID, sellerID string) *Order {
 	now := time.Now()
 	return &Order{
@@ -72,12 +78,19 @@ func NewOrder(sku, location, tenantID, sellerID string) *Order {
 	}
 }
 
-// IsValid checks if the order has all required fields
+
+
+
+
+
+
+
+
+
 func (o *Order) IsValid() bool {
 	return o.ID != "" && o.SKU != "" && o.Location != "" && o.TenantID != "" && o.SellerID != ""
 }
 
-// UpdateStatus updates the order status and timestamp
 func (o *Order) UpdateStatus(status OrderStatus) {
 	o.Status = status
 	o.UpdatedAt = time.Now()

@@ -152,6 +152,8 @@ github.com/newrelic/go-agent/v3/integrations/nrpkgerrors v1.1.0 h1:TmAihIxCqgz3v
 github.com/newrelic/go-agent/v3/integrations/nrpkgerrors v1.1.0/go.mod h1:yXUqcAzlKNVIsSyoaI2ILdpvBeMCz3Ko/ASl4Vbg2i4=
 github.com/omniful/go_commons v0.6.23 h1:fns7Y3AfP5qWR4E5Cet9fT8J462ulxcsR7I3+vkbkw8=
 github.com/omniful/go_commons v0.6.23/go.mod h1:0AAHmAOp1jfC/oFOWuCXHHdFURyCezxiwZ0K4HRaZgY=
+github.com/omniful/go_commons v0.6.24 h1:hM+tJEt0u+sf61xyvbRvH93/mqkikhGQakHd9375Tz4=
+github.com/omniful/go_commons v0.6.24/go.mod h1:0AAHmAOp1jfC/oFOWuCXHHdFURyCezxiwZ0K4HRaZgY=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pierrec/lz4/v4 v4.1.22 h1:cKFw6uJDK+/gfw5BcDL0JL5aBsAFdsIT18eRtLj7VIU=

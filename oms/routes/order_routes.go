@@ -7,16 +7,11 @@ import (
 	"github.com/omniful/go_commons/http"
 )
 
-// RegisterOrderRoutes registers all order-related routes using go_commons patterns
+// RegisterOrderRoutes 
 func RegisterOrderRoutes(server *http.Server, orderController *controllers.OrderController) {
-	// Apply global middleware
+	//middleware
 	server.Use(middleware.LoggingMiddleware())
-
-	// Public endpoints (no auth required)
-	server.GET("/test", orderController.TestEndpoint)
-	server.GET("/health", orderController.HealthCheck)
-
-	// Order management routes (with auth required)
+	// Order management routes 
 	orders := server.Group("/api/v1/orders")
 	orders.Use(middleware.AuthMiddleware())
 	{

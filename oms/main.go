@@ -2,100 +2,102 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
-
+    "oms/utils"
 	"oms/controllers"
 	"oms/database"
 	"oms/routes"
-	"oms/utils"
-
 	"github.com/joho/godotenv"
 	"github.com/omniful/go_commons/http"
 	"github.com/omniful/go_commons/i18n"
-	"github.com/omniful/go_commons/log"
 )
 
 func main() {
-	log.Info("OMS Service Starting...")
+	fmt.Println("OMS Service Starting...")
 
-	// Load environment variables (optional)
 	_ = godotenv.Load()
-
-	// Initialize i18n for internationalized error messages
 	_ = i18n.Initialize(i18n.WithRootPath("./localization"))
 
-	// Set default values for LocalStack if not provided
+
+//    config
 	bucketName := getEnvOrDefault("S3_BUCKET_NAME", "order-csv-bucket")
 	s3Endpoint := getEnvOrDefault("AWS_S3_ENDPOINT", "http://localhost:4566")
 	sqsEndpoint := getEnvOrDefault("AWS_SQS_ENDPOINT", "http://localhost:4566")
 	awsRegion := getEnvOrDefault("AWS_REGION", "us-east-1")
 	queueName := getEnvOrDefault("CREATE_BULK_ORDER_QUEUE_NAME", "CreateBulkOrder")
 
-	// Kafka configuration
 	kafkaBrokers := []string{getEnvOrDefault("KAFKA_BROKERS", "localhost:9092")}
 	kafkaTopic := getEnvOrDefault("KAFKA_ORDER_TOPIC", "order.created")
 
-	// MongoDB connection settings
 	mongoURI := getEnvOrDefault("MONGODB_URI", "mongodb://myuser:mypassword@localhost:27018/mydb?authSource=admin")
 	mongoDBName := getEnvOrDefault("MONGODB_DB_NAME", "mydb")
 
-	// Initialize MongoDB connection
+
+
+
+	// mongodb
 	mongoDB, err := database.NewDatabase(context.Background(), mongoURI, mongoDBName)
 	if err != nil {
-		log.WithError(err).Error("Failed to initialize MongoDB connection")
+		fmt.Printf("Mongo connect error: %v\n", err)
 		return
 	}
 
-	// Initialize Order Repository
 	orderRepo := database.NewOrderRepository(mongoDB)
 
-	// Initialize IMS Client for validation
+
+
+	// imsurl
 	imsBaseURL := getEnvOrDefault("IMS_BASE_URL", "http://localhost:8084")
 	imsClient := utils.NewIMSClient(imsBaseURL)
 
-	// Initialize S3 uploader
+
+
+
+	// s3upload
 	s3Uploader, err := utils.NewS3Uploader(bucketName, s3Endpoint, awsRegion)
 	if err != nil {
-		log.WithError(err).Error("Failed to initialize S3 uploader")
+		fmt.Printf("S3 upload init error: %v\n", err)
 		return
 	}
 
-	// Initialize SQS publisher
+
+	// sqspublisher
 	sqsPublisher, err := utils.NewSQSPublisher(queueName, sqsEndpoint, awsRegion)
 	if err != nil {
-		log.WithError(err).Error("Failed to initialize SQS publisher")
+		fmt.Printf("SQS publish init error: %v\n", err)
 		return
 	}
 
-	// Initialize Kafka producer
+
+
+	// kafkaproducer
 	kafkaProducer, err := utils.NewKafkaProducer(kafkaBrokers, kafkaTopic)
 	if err != nil {
-		log.WithError(err).Error("Failed to initialize Kafka producer")
+		fmt.Printf("Kafka producer init error: %v\n", err)
 		return
 	}
 
-	// Kafka consumer
 	kafkaAvailable := true
 	var kafkaConsumer *utils.OrderFinalizationConsumer
 
 	if kafkaAvailable {
 		kafkaConsumer, err = utils.NewOrderFinalizationConsumer(kafkaBrokers, kafkaTopic, orderRepo, imsClient)
 		if err != nil {
-			log.WithError(err).Error("Failed to initialize Kafka consumer")
+			fmt.Printf("Kafka consumer init error: %v\n", err)
 			return
 		}
 	}
 
-	// Initialize SQS consumer with default message handler
 	defaultHandler, err := utils.NewDefaultMessageHandler(s3Endpoint, awsRegion, orderRepo, imsClient, kafkaProducer, s3Uploader)
 	if err != nil {
-		log.WithError(err).Error("Failed to initialize default message handler")
+		fmt.Printf("Message handler error: %v\n", err)
 		return
 	}
 	sqsConsumer, err := utils.NewSQSConsumer(queueName, sqsEndpoint, awsRegion, defaultHandler)
 	if err != nil {
-		log.WithError(err).Error("Failed to initialize SQS consumer")
+		fmt.Printf("SQS consumer error: %v\n", err)
 		return
 	}
 
@@ -120,12 +122,15 @@ func main() {
 		}()
 	}
 
+
+
+	// server
 	server := http.InitializeServer(
 		":8086",
 		10*time.Second,
 		10*time.Second,
 		70*time.Second,
-		true, // enableRecovery
+		true,
 	)
 
 	orderController := &controllers.OrderController{
@@ -136,10 +141,10 @@ func main() {
 
 	routes.RegisterOrderRoutes(server, orderController)
 
-	log.Info("OMS Service initialized successfully")
+	fmt.Println("OMS Service Ready")
 
 	if err := server.StartServer("oms-service"); err != nil {
-		log.WithError(err).Error("Failed to start OMS HTTP server")
+		fmt.Printf("HTTP server start error: %v\n", err)
 		cancel()
 	}
 }

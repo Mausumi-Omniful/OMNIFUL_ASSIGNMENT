@@ -10,7 +10,7 @@ import (
 	"github.com/omniful/go_commons/pubsub"
 )
 
-// OrderCreatedEvent represents the event structure for order.created
+//structure for order.created
 type OrderCreatedEvent struct {
 	OrderID   string `json:"order_id"`
 	SKU       string `json:"sku"`
@@ -21,13 +21,18 @@ type OrderCreatedEvent struct {
 	CreatedAt string `json:"created_at"`
 }
 
-// KafkaProducer handles Kafka event publishing
+
 type KafkaProducer struct {
 	producer *kafka.ProducerClient
 	topic    string
 }
 
-// NewKafkaProducer creates a new Kafka producer
+
+
+
+
+
+// NewKafkaProducer
 func NewKafkaProducer(brokers []string, topic string) (*KafkaProducer, error) {
 	producer := kafka.NewProducer(
 		kafka.WithBrokers(brokers),
@@ -43,22 +48,21 @@ func NewKafkaProducer(brokers []string, topic string) (*KafkaProducer, error) {
 	}, nil
 }
 
-// PublishOrderCreated publishes an order.created event
+
+
+
+
+// PublishOrderCreated
 func (k *KafkaProducer) PublishOrderCreated(ctx context.Context, event OrderCreatedEvent) error {
-	// Convert event to JSON
 	eventData, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("failed to marshal order created event: %w", err)
 	}
-
-	// Create pubsub message
 	message := &pubsub.Message{
 		Topic: k.topic,
 		Value: eventData,
-		Key:   event.OrderID, // Use order ID as message key for partitioning
+		Key:   event.OrderID, 
 	}
-
-	// Publish message
 	err = k.producer.Publish(ctx, message)
 	if err != nil {
 		return fmt.Errorf("failed to publish order created event: %w", err)
@@ -68,7 +72,11 @@ func (k *KafkaProducer) PublishOrderCreated(ctx context.Context, event OrderCrea
 	return nil
 }
 
-// Close closes the Kafka producer
+
+
+
+
+// Close Kafka producer
 func (k *KafkaProducer) Close() {
 	if k.producer != nil {
 		k.producer.Close()
