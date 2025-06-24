@@ -51,9 +51,7 @@ func NewDatabase(ctx context.Context, uri, dbName string) (*Database, error) {
 
 
 
-func (db *Database) GetCollection(name string) *mongo.Collection {
-	return db.database.Collection(name)
-}
+
 
 
 func (db *Database) Close(ctx context.Context) error {

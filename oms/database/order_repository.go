@@ -6,25 +6,22 @@ import (
 	"time"
 
 	"oms/models"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-
-
-
-
-//saves order to MongoDB
+// saves order to MongoDB
 func (r *OrderRepository) SaveOrder(ctx context.Context, order *models.Order) error {
-	
+
 	if order.CreatedAt.IsZero() {
 		order.CreatedAt = time.Now()
 	}
 	order.UpdatedAt = time.Now()
 
 	doc := bson.M{
-		"order_id":   order.ID, 
+		"order_id":   order.ID,
 		"sku":        order.SKU,
 		"location":   order.Location,
 		"tenant_id":  order.TenantID,
@@ -34,7 +31,6 @@ func (r *OrderRepository) SaveOrder(ctx context.Context, order *models.Order) er
 		"updated_at": order.UpdatedAt,
 	}
 
-	
 	result, err := r.collection.InsertOne(ctx, doc)
 	if err != nil {
 		fmt.Println("ERROR: Failed to save order to MongoDB:", err)
@@ -48,8 +44,6 @@ func (r *OrderRepository) SaveOrder(ctx context.Context, order *models.Order) er
 
 
 
-
-
 // GetOrders from mongodb
 func (r *OrderRepository) GetOrders(ctx context.Context, limit, offset int) ([]models.Order, error) {
 	if limit <= 0 {
@@ -58,7 +52,7 @@ func (r *OrderRepository) GetOrders(ctx context.Context, limit, offset int) ([]m
 	if offset < 0 {
 		offset = 0
 	}
-	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset)).SetSort(bson.D{{Key: "created_at", Value: -1}}) 
+	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset)).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cursor, err := r.collection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		fmt.Println("ERROR: Failed to query orders from MongoDB:", err)
@@ -74,7 +68,6 @@ func (r *OrderRepository) GetOrders(ctx context.Context, limit, offset int) ([]m
 	fmt.Printf("Retrieved %d orders from MongoDB\n", len(orders))
 	return orders, nil
 }
-
 
 
 
@@ -101,8 +94,7 @@ func (r *OrderRepository) GetOrdersByFilter(ctx context.Context, filters map[str
 		filter["status"] = status
 	}
 
-	
-	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset)).SetSort(bson.D{{Key: "created_at", Value: -1}}) 
+	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset)).SetSort(bson.D{{Key: "created_at", Value: -1}})
 	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		fmt.Println("ERROR: Failed to query filtered orders from MongoDB:", err)
@@ -118,7 +110,6 @@ func (r *OrderRepository) GetOrdersByFilter(ctx context.Context, filters map[str
 	fmt.Printf("Retrieved %d filtered orders from MongoDB\n", len(orders))
 	return orders, nil
 }
-
 
 
 
@@ -151,24 +142,20 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*mo
 	} else if createdAt, ok := result["created_at"].(time.Time); ok {
 		order.CreatedAt = createdAt
 	} else {
-		order.CreatedAt = time.Now() // fallback
+		order.CreatedAt = time.Now()
 	}
 	if updatedAt, ok := result["updated_at"].(primitive.DateTime); ok {
 		order.UpdatedAt = updatedAt.Time()
 	} else if updatedAt, ok := result["updated_at"].(time.Time); ok {
 		order.UpdatedAt = updatedAt
 	} else {
-		order.UpdatedAt = time.Now() // fallback
+		order.UpdatedAt = time.Now()
 	}
 
 	fmt.Printf("Found order - OrderID: %s, Status: %s, SKU: %s, Location: %s\n",
 		order.ID, order.Status, order.SKU, order.Location)
 	return order, nil
 }
-
-
-
-
 
 
 
@@ -190,7 +177,7 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string,
 		fmt.Printf("ERROR: Failed to update order status - OrderID: %s: %v\n", orderID, err)
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
-	if result.MatchedCount == 0 {
+	if result.MatchedCount==0 {
 		fmt.Printf("Order not found for status update - OrderID: %s\n", orderID)
 		return fmt.Errorf("order not found with ID: %s", orderID)
 	}

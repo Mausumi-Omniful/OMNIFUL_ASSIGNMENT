@@ -19,6 +19,11 @@ type OrderRepositoryInterface interface {
 	UpdateOrderStatus(ctx context.Context, orderID string, newStatus models.OrderStatus) error
 }
 
+
+
+
+
+
 type IMSClientInterface interface {
 	GetSKUs() ([]SKU, error)
 	GetHubs() ([]Hub, error)
@@ -40,6 +45,11 @@ type OrderFinalizationHandler struct {
 	orderRepo OrderRepositoryInterface
 	imsClient IMSClientInterface
 }
+
+
+
+
+
 
 func NewOrderFinalizationConsumer(brokers []string, topic string, orderRepo OrderRepositoryInterface, imsClient IMSClientInterface) (*OrderFinalizationConsumer, error) {
 	config := sarama.NewConfig()
@@ -99,6 +109,9 @@ func (c *OrderFinalizationConsumer) Start(ctx context.Context) {
 	}()
 }
 
+
+
+
 func (c *OrderFinalizationConsumer) Stop() error {
 	fmt.Println("Stopping consumer...")
 	c.cancel()
@@ -109,6 +122,10 @@ func (c *OrderFinalizationConsumer) Stop() error {
 	}
 	return nil
 }
+
+
+
+
 
 func (h *OrderFinalizationHandler) Setup(sarama.ConsumerGroupSession) error {
 	fmt.Println("Setup done")

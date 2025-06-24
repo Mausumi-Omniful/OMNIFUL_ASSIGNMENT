@@ -10,7 +10,9 @@ type OrderRepository struct {
 	collection *mongo.Collection
 }
 
-
+func (db *Database) GetCollection(name string) *mongo.Collection {
+	return db.database.Collection(name)
+}
 
 func NewOrderRepository(db *Database) *OrderRepository {
 	collection := db.GetCollection("orders")

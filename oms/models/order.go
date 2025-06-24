@@ -91,7 +91,4 @@ func (o *Order) IsValid() bool {
 	return o.ID != "" && o.SKU != "" && o.Location != "" && o.TenantID != "" && o.SellerID != ""
 }
 
-func (o *Order) UpdateStatus(status OrderStatus) {
-	o.Status = status
-	o.UpdatedAt = time.Now()
-}
+
