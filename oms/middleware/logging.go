@@ -15,9 +15,3 @@ func LoggingMiddleware() gin.HandlerFunc {
 	})
 }
 
-
-func RequestIDMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
-} 
