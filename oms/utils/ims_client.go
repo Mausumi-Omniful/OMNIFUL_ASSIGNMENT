@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -65,8 +66,6 @@ func NewIMSClient(baseURL string) *IMSClient {
 	}
 }
 
-
-
 // getskus
 func (c *IMSClient) GetSKUs() ([]SKU, error) {
 	url := fmt.Sprintf("%s/sku/", c.baseURL)
@@ -90,8 +89,6 @@ func (c *IMSClient) GetSKUs() ([]SKU, error) {
 	fmt.Printf("Successfully fetched %d SKUs from IMS\n", len(skuResponse.Data))
 	return skuResponse.Data, nil
 }
-
-
 
 // gethubs
 func (c *IMSClient) GetHubs() ([]Hub, error) {
@@ -117,8 +114,6 @@ func (c *IMSClient) GetHubs() ([]Hub, error) {
 	return hubResponse.Data, nil
 }
 
-
-
 // getinventory
 func (c *IMSClient) GetInventory() ([]Inventory, error) {
 	url := fmt.Sprintf("%s/inventory/", c.baseURL)
@@ -143,10 +138,6 @@ func (c *IMSClient) GetInventory() ([]Inventory, error) {
 	return inventoryResponse.Data, nil
 }
 
-
-
-
-
 // validatesku
 func (c *IMSClient) ValidateSKU(skuCode, tenantID, sellerID string) (bool, error) {
 	skus, err := c.GetSKUs()
@@ -166,9 +157,6 @@ func (c *IMSClient) ValidateSKU(skuCode, tenantID, sellerID string) (bool, error
 	return false, nil
 }
 
-
-
-
 // validatehub
 func (c *IMSClient) ValidateHub(hubName, tenantID, sellerID string) (bool, error) {
 	hubs, err := c.GetHubs()
@@ -187,15 +175,6 @@ func (c *IMSClient) ValidateHub(hubName, tenantID, sellerID string) (bool, error
 
 	return false, nil
 }
-
-
-
-
-
-
-
-
-
 
 // checkinventory
 func (c *IMSClient) CheckInventoryAvailability(sku, location, tenantID, sellerID string) (bool, int, error) {
@@ -225,4 +204,31 @@ func (c *IMSClient) CheckInventoryAvailability(sku, location, tenantID, sellerID
 		sku, location, tenantID, sellerID)
 
 	return false, 0, nil
+}
+
+// ReduceInventory calls the IMS API to atomically reduce inventory for a SKU/location
+func (c *IMSClient) ReduceInventory(sku, location, tenantID, sellerID string, quantity int) (bool, error) {
+	url := fmt.Sprintf("%s/inventory/reduce", c.baseURL)
+	payload := map[string]interface{}{
+		"sku":       sku,
+		"location":  location,
+		"quantity":  quantity,
+		"tenant_id": tenantID,
+		"seller_id": sellerID,
+	}
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		return true, nil
+	}
+	return false, fmt.Errorf("IMS ReduceInventory failed with status %d", resp.StatusCode)
 }

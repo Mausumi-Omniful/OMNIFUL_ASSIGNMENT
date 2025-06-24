@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"oms/models"
+	"oms/webhook"
 
 	"github.com/IBM/sarama"
 )
@@ -19,11 +20,6 @@ type OrderRepositoryInterface interface {
 	UpdateOrderStatus(ctx context.Context, orderID string, newStatus models.OrderStatus) error
 }
 
-
-
-
-
-
 type IMSClientInterface interface {
 	GetSKUs() ([]SKU, error)
 	GetHubs() ([]Hub, error)
@@ -31,6 +27,7 @@ type IMSClientInterface interface {
 	ValidateSKU(skuCode, tenantID, sellerID string) (bool, error)
 	ValidateHub(hubName, tenantID, sellerID string) (bool, error)
 	CheckInventoryAvailability(skuCode, location, tenantID, sellerID string) (bool, int, error)
+	ReduceInventory(skuCode, location, tenantID, sellerID string, quantity int) (bool, error)
 }
 
 type OrderFinalizationConsumer struct {
@@ -45,9 +42,6 @@ type OrderFinalizationHandler struct {
 	orderRepo OrderRepositoryInterface
 	imsClient IMSClientInterface
 }
-
-
-
 
 
 
@@ -74,6 +68,10 @@ func NewOrderFinalizationConsumer(brokers []string, topic string, orderRepo Orde
 		cancel:        cancel,
 	}, nil
 }
+
+
+
+
 
 func (c *OrderFinalizationConsumer) Start(ctx context.Context) {
 	fmt.Println("Consumer starting...")
@@ -111,7 +109,6 @@ func (c *OrderFinalizationConsumer) Start(ctx context.Context) {
 
 
 
-
 func (c *OrderFinalizationConsumer) Stop() error {
 	fmt.Println("Stopping consumer...")
 	c.cancel()
@@ -125,17 +122,19 @@ func (c *OrderFinalizationConsumer) Stop() error {
 
 
 
-
-
 func (h *OrderFinalizationHandler) Setup(sarama.ConsumerGroupSession) error {
 	fmt.Println("Setup done")
 	return nil
 }
 
+
+
 func (h *OrderFinalizationHandler) Cleanup(sarama.ConsumerGroupSession) error {
 	fmt.Println("Cleanup done")
 	return nil
 }
+
+
 
 
 
@@ -199,7 +198,7 @@ func (h *OrderFinalizationHandler) processMessage(ctx context.Context, message *
 		return fmt.Errorf("invalid status: %s", order.Status)
 	}
 
-	available, quantity, err := h.imsClient.CheckInventoryAvailability(order.SKU, order.Location, order.TenantID, order.SellerID)
+	available, _, err := h.imsClient.CheckInventoryAvailability(order.SKU, order.Location, order.TenantID, order.SellerID)
 	if err != nil {
 		fmt.Println("Inventory check failed")
 		_ = h.orderRepo.UpdateOrderStatus(ctx, order.ID, "cancelled")
@@ -208,19 +207,38 @@ func (h *OrderFinalizationHandler) processMessage(ctx context.Context, message *
 	}
 
 	if available {
-		fmt.Printf("Stock OK (%d), finalizing\n", quantity)
+		fmt.Println("Stock is available. Attempting to reduce inventory...")
+		reduced, reduceErr := h.imsClient.ReduceInventory(order.SKU, order.Location, order.TenantID, order.SellerID, 1)
+		fmt.Printf("ReduceInventory Result: Success = %v, Error = %v\n", reduced, reduceErr)
+		if reduceErr != nil || !reduced {
+			fmt.Println("Action: Inventory reduction failed. Keeping order ON HOLD.")
+			_ = h.orderRepo.UpdateOrderStatus(ctx, order.ID, "on_hold")
+	
+			return fmt.Errorf("inventory reduction failed: %w", reduceErr)
+		}
+		fmt.Println("Inventory reduced successfully.")
+		fmt.Println("Action: Updating order status to NEW_ORDER.")
 		if err := h.orderRepo.UpdateOrderStatus(ctx, order.ID, "new_order"); err != nil {
-			fmt.Println("Status update failed")
+			fmt.Printf("Status Update Error: %v\n", err)
+		
 			return fmt.Errorf("finalize error: %w", err)
 		}
-		fmt.Println("Order finalized")
+		order.Status = "new_order"
+		fmt.Println("Order finalized successfully.")
+		// Log webhook event for order finalized
+		_ = webhook.LogWebhookEvent(ctx, "order.finalized", order)
 	} else {
-		fmt.Println("No stock, cancelling")
+		fmt.Println("Stock is NOT available.")
+		fmt.Println("Action: Cancelling order due to insufficient stock.")
 		if err := h.orderRepo.UpdateOrderStatus(ctx, order.ID, "cancelled"); err != nil {
-			fmt.Println("Cancel failed")
+			fmt.Printf("Cancel Error: %v\n", err)
+			
 			return fmt.Errorf("cancel error: %w", err)
 		}
-		fmt.Println("Order cancelled")
+		order.Status = "cancelled"
+		fmt.Println("Order cancelled.")
+		// Log webhook event for order cancelled
+		_ = webhook.LogWebhookEvent(ctx, "order.cancelled", order)
 	}
 
 	return nil

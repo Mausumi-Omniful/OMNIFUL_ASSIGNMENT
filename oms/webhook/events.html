@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Webhook Events</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>Webhook Events</h1>
+    <table id="eventsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Event Type</th>
+                <th>Payload</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <script>
+        fetch('/api/v1/webhook/events')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector('#eventsTable tbody');
+                tbody.innerHTML = '';
+                (data.events || []).forEach(event => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${event.id || ''}</td>
+                        <td>${event.event_type}</td>
+                        <td><pre>${event.payload}</pre></td>
+                        <td>${new Date(event.created_at).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,30 @@
+# Config file for go-test-coverage github action.
+
+profile: coverage.out
+local-prefix: "github.com/omniful/go_commons"
+threshold:
+  file: 60
+  package: 70
+  total: 70
+override:
+  - path: config/config.go
+    threshold: 30
+  - path: ^config$
+    threshold: 60
+exclude:
+  paths:
+    - main\.go$
+    - csv/
+    - env/
+    - error/
+    - http/
+    - jwt/
+    - lambda/
+    - log/
+    - mobile_number/
+    - rules/
+    - shutdown/
+    - config/context\.go$
+    - config/fetcher
+    - config/observer
+    - config/middleware\.go$

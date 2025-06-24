@@ -9,18 +9,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var globalDB *Database
+
+func SetGlobalDatabase(db *Database) {
+	globalDB = db
+}
+
+func GetGlobalDatabase() *Database {
+	return globalDB
+}
 
 type Database struct {
 	client   *mongo.Client
 	database *mongo.Database
 }
 
-
-
-
-
-
-//MongoDB connection
+// MongoDB connection
 func NewDatabase(ctx context.Context, uri, dbName string) (*Database, error) {
 	fmt.Println("Connecting to MongoDB:", uri)
 
@@ -45,14 +49,6 @@ func NewDatabase(ctx context.Context, uri, dbName string) (*Database, error) {
 		database: client.Database(dbName),
 	}, nil
 }
-
-
-
-
-
-
-
-
 
 func (db *Database) Close(ctx context.Context) error {
 	if db.client != nil {

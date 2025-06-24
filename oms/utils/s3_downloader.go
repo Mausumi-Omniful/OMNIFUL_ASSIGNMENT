@@ -15,26 +15,25 @@ type S3DownloaderImpl struct {
 	client *s3.Client
 }
 
-
-
-
 // s3downloader
 func NewS3Downloader(endpoint, region string) (*S3DownloaderImpl, error) {
 	if endpoint != "" {
 		os.Setenv("AWS_S3_ENDPOINT", endpoint)
 	}
-    client, err := commons3.NewDefaultAWSS3Client()
+	// Ensure AWS_REGION is set
+	if os.Getenv("AWS_REGION") == "" && region != "" {
+		os.Setenv("AWS_REGION", region)
+	}
+	if os.Getenv("AWS_REGION") == "" {
+		return nil, fmt.Errorf("AWS region must be set via environment variable or constructor parameter")
+	}
+	client, err := commons3.NewDefaultAWSS3Client()
 	if err != nil {
 		return nil, fmt.Errorf("AWS client error: %w", err)
 	}
-    fmt.Println("S3 downloader ready")
+	fmt.Println("S3 downloader ready")
 	return &S3DownloaderImpl{client: client}, nil
 }
-
-
-
-
-
 
 // downloadfile
 func (s *S3DownloaderImpl) DownloadFile(ctx context.Context, s3Path string) ([]byte, error) {
@@ -60,11 +59,6 @@ func (s *S3DownloaderImpl) DownloadFile(ctx context.Context, s3Path string) ([]b
 	fmt.Printf("Downloaded %d bytes\n", len(content))
 	return content, nil
 }
-
-
-
-
-
 
 // parses3path
 func (s *S3DownloaderImpl) parseS3Path(s3Path string) (string, string, error) {

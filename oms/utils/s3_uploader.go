@@ -16,12 +16,17 @@ type S3UploaderImpl struct {
 	bucket string
 }
 
-
-
-
 func NewS3Uploader(bucket, endpoint, region string) (*S3UploaderImpl, error) {
 	if endpoint != "" {
 		os.Setenv("AWS_S3_ENDPOINT", endpoint)
+	}
+
+	// Ensure AWS_REGION is set
+	if os.Getenv("AWS_REGION") == "" && region != "" {
+		os.Setenv("AWS_REGION", region)
+	}
+	if os.Getenv("AWS_REGION") == "" {
+		return nil, fmt.Errorf("AWS region must be set via environment variable or constructor parameter")
 	}
 
 	client, err := commons3.NewDefaultAWSS3Client()
@@ -50,12 +55,6 @@ func NewS3Uploader(bucket, endpoint, region string) (*S3UploaderImpl, error) {
 		bucket: bucket,
 	}, nil
 }
-
-
-
-
-
-
 
 func (s *S3UploaderImpl) UploadFile(ctx context.Context, fileContent []byte, filename string) (string, error) {
 	timestamp := time.Now().Unix()

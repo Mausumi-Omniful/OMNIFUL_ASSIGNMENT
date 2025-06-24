@@ -60,20 +60,16 @@ func GetInventories(c *gin.Context) {
 	var inv []models.Inventory
 
 	ctx := context.Background()
-
-	// Get query parameters
-	sku := c.Query("sku")
+    sku := c.Query("sku")
 	location := c.Query("location")
 
-	// Create dynamic cache key based on query parameters
+	
 	var cacheKey string
 	if sku == "" && location == "" {
 		cacheKey = "inventory:all"
 	} else {
 		cacheKey = fmt.Sprintf("inventory:%s:%s", sku, location)
 	}
-
-	// Try to get from cache first
 	cached, err := redisclient.Client.Get(ctx, cacheKey)
 	if err == nil && cached != "" {
 		if err := json.Unmarshal([]byte(cached), &inv); err == nil {
@@ -85,18 +81,13 @@ func GetInventories(c *gin.Context) {
 		}
 	}
 
-	// If not in cache, get from database
 	query := db.DB.GetMasterDB(c.Request.Context())
-
-	// Apply filters based on query parameters
 	if sku != "" {
 		query = query.Where("sku = ?", sku)
 	}
 	if location != "" {
 		query = query.Where("location = ?", location)
 	}
-
-	// Order by ID to ensure consistent results
 	query = query.Order("id ASC")
 
 	res := query.Find(&inv)
@@ -104,14 +95,10 @@ func GetInventories(c *gin.Context) {
 		c.JSON(500, gin.H{"error": res.Error.Error()})
 		return
 	}
-
-	// Process inventory data
 	for i := range inv {
-		// Ensure quantity is not negative
 		if inv[i].Quantity < 0 {
 			inv[i].Quantity = 0
 		}
-		// Ensure SKU and Location are not nil
 		if inv[i].SKU == "" {
 			inv[i].SKU = ""
 		}
@@ -119,11 +106,8 @@ func GetInventories(c *gin.Context) {
 			inv[i].Location = ""
 		}
 	}
-
-	// Cache the results
 	data, err := json.Marshal(inv)
 	if err == nil {
-		// Cache for 1 hour
 		_, _ = redisclient.Client.Set(ctx, cacheKey, string(data), 1*time.Hour)
 	}
 
@@ -132,6 +116,11 @@ func GetInventories(c *gin.Context) {
 		"data":   inv,
 	})
 }
+
+
+
+
+
 
 // UpdateInventory
 func UpdateInventory(c *gin.Context) {
@@ -167,6 +156,9 @@ func UpdateInventory(c *gin.Context) {
 	c.JSON(http.StatusOK, inventory)
 }
 
+
+
+
 // DeleteInventory
 func DeleteInventory(c *gin.Context) {
 	id := c.Param("id")
@@ -181,6 +173,9 @@ func DeleteInventory(c *gin.Context) {
 
 	c.JSON(200, gin.H{"message": "Inventory deleted successfully"})
 }
+
+
+
 
 // UpsertInventory
 func UpsertInventory(c *gin.Context) {
@@ -217,7 +212,12 @@ func UpsertInventory(c *gin.Context) {
 	})
 }
 
-// ReduceInventory - Atomic inventory reduction
+
+
+
+
+
+// ReduceInventory
 func ReduceInventory(c *gin.Context) {
 	var request struct {
 		SKU      string `json:"sku" binding:"required"`
@@ -230,22 +230,16 @@ func ReduceInventory(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Start database transaction
 	tx := db.DB.GetMasterDB(c.Request.Context()).Begin()
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
 		return
 	}
-
-	// Ensure transaction is rolled back on error
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
-
-	// Lock the specific inventory row for update
 	var inventory models.Inventory
 	result := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where("sku = ? AND location = ?", request.SKU, request.Location).
@@ -262,8 +256,6 @@ func ReduceInventory(c *gin.Context) {
 		}
 		return
 	}
-
-	// Validate if sufficient quantity exists
 	if inventory.Quantity < request.Quantity {
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -277,28 +269,18 @@ func ReduceInventory(c *gin.Context) {
 		})
 		return
 	}
-
-	// Calculate new quantity
-	newQuantity := inventory.Quantity - request.Quantity
-
-	// Update inventory quantity
+	newQuantity:= inventory.Quantity-request.Quantity
 	updateResult := tx.Model(&inventory).Update("quantity", newQuantity)
 	if updateResult.Error != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update inventory"})
 		return
 	}
-
-	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
 	}
-
-	// Update inventory object with new quantity for response
 	inventory.Quantity = newQuantity
-
-	// Update cache in background
 	go invalidateInventoryCache(context.Background())
 
 	c.JSON(http.StatusOK, gin.H{

@@ -40,10 +40,6 @@ func (r *OrderRepository) SaveOrder(ctx context.Context, order *models.Order) er
 	return nil
 }
 
-
-
-
-
 // GetOrders from mongodb
 func (r *OrderRepository) GetOrders(ctx context.Context, limit, offset int) ([]models.Order, error) {
 	if limit <= 0 {
@@ -68,10 +64,6 @@ func (r *OrderRepository) GetOrders(ctx context.Context, limit, offset int) ([]m
 	fmt.Printf("Retrieved %d orders from MongoDB\n", len(orders))
 	return orders, nil
 }
-
-
-
-
 
 // GetOrdersByFilter
 func (r *OrderRepository) GetOrdersByFilter(ctx context.Context, filters map[string]string, limit, offset int) ([]models.Order, error) {
@@ -110,10 +102,6 @@ func (r *OrderRepository) GetOrdersByFilter(ctx context.Context, filters map[str
 	fmt.Printf("Retrieved %d filtered orders from MongoDB\n", len(orders))
 	return orders, nil
 }
-
-
-
-
 
 // GetOrderByID
 func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*models.Order, error) {
@@ -157,11 +145,6 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*mo
 	return order, nil
 }
 
-
-
-
-
-
 // UpdateOrderStatus
 func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string, newStatus models.OrderStatus) error {
 	fmt.Printf("Updating order status - OrderID: %s, NewStatus: %s\n", orderID, newStatus)
@@ -177,7 +160,7 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string,
 		fmt.Printf("ERROR: Failed to update order status - OrderID: %s: %v\n", orderID, err)
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
-	if result.MatchedCount==0 {
+	if result.MatchedCount == 0 {
 		fmt.Printf("Order not found for status update - OrderID: %s\n", orderID)
 		return fmt.Errorf("order not found with ID: %s", orderID)
 	}
@@ -188,5 +171,15 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string,
 
 	fmt.Printf("Order status updated successfully - OrderID: %s, NewStatus: %s, Modified: %d\n",
 		orderID, newStatus, result.ModifiedCount)
+	return nil
+}
+
+// SaveWebhookEvent to database
+func SaveWebhookEvent(ctx context.Context, event interface{}) error {
+	collection := GetGlobalDatabase().GetCollection("webhook_events")
+	_, err := collection.InsertOne(ctx, event)
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -1,0 +1,110 @@
+{
+  "validation.required": {
+    "message": "{value} مطلوب"
+  },
+  "validation.email": {
+    "message": "{value} يجب أن يكون عنوان بريد إلكتروني صالح"
+  },
+  "validation.phone": {
+    "message": "{value} يجب أن يكون رقم هاتف صالح"
+  },
+  "validation.min": {
+    "message": "{value} يجب أن يكون على الأقل {param} حرف"
+  },
+  "validation.max": {
+    "message": "{value} يجب أن يكون على الأكثر {param} حرف"
+  },
+  "validation.len": {
+    "message": "{value} يجب أن يكون بالضبط {param} حرف"
+  },
+  "validation.gt": {
+    "message": "{value} يجب أن يكون أكبر من {param}"
+  },
+  "validation.gte": {
+    "message": "{value} يجب أن يكون أكبر من أو يساوي {param}"
+  },
+  "validation.lt": {
+    "message": "{value} يجب أن يكون أقل من {param}"
+  },
+  "validation.lte": {
+    "message": "{value} يجب أن يكون أقل من أو يساوي {param}"
+  },
+  "validation.alphanum": {
+    "message": "{value} يجب أن يحتوي على أحرف وأرقام فقط"
+  },
+  "validation.alpha": {
+    "message": "{value} يجب أن يحتوي على أحرف فقط"
+  },
+  "validation.alphaspace": {
+    "message": "{value} يجب أن يحتوي على أحرف ومسافات فقط"
+  },
+  "validation.slug": {
+    "message": "{value} يجب أن يكون نص صالح (أحرف صغيرة وأرقام وشرطات)"
+  },
+  "validation.future_date": {
+    "message": "{value} يجب أن يكون تاريخ مستقبلي"
+  },
+  "validation.past_date": {
+    "message": "{value} يجب أن يكون تاريخ سابق"
+  },
+  "validation.strong_password": {
+    "message": "{value} يجب أن يكون على الأقل 8 أحرف ويحتوي على 3 من: أحرف كبيرة، أحرف صغيرة، أرقام، رموز خاصة"
+  },
+  "validation.objectid": {
+    "message": "{value} يجب أن يكون معرف MongoDB صالح"
+  },
+  "validation.nonzero": {
+    "message": "{value} يجب ألا يكون صفر"
+  },
+  "validation.url": {
+    "message": "{value} يجب أن يكون رابط صالح"
+  },
+  "validation.uuid": {
+    "message": "{value} يجب أن يكون UUID صالح"
+  },
+  "validation.oneof": {
+    "message": "{value} يجب أن يكون واحد من: {param}"
+  },
+  "validation.contains": {
+    "message": "{value} يجب أن يحتوي على '{param}'"
+  },
+  "validation.startswith": {
+    "message": "{value} يجب أن يبدأ بـ '{param}'"
+  },
+  "validation.endswith": {
+    "message": "{value} يجب أن ينتهي بـ '{param}'"
+  },
+  "validation.numeric": {
+    "message": "{value} يجب أن يكون قيمة رقمية"
+  },
+  "validation.eqfield": {
+    "message": "{value} يجب أن يكون مساوي لـ {param}"
+  },
+  "validation.gtfield": {
+    "message": "{value} يجب أن يكون أكبر من {param}"
+  },
+  "validation.gtefield": {
+    "message": "{value} يجب أن يكون أكبر من أو يساوي {param}"
+  },
+  "validation.ltfield": {
+    "message": "{value} يجب أن يكون أقل من {param}"
+  },
+  "validation.ltefield": {
+    "message": "{value} يجب أن يكون أقل من أو يساوي {param}"
+  },
+  "validation.required_if": {
+    "message": "{value} مطلوب عندما {param}"
+  },
+  "validation.json": {
+    "message": "{value} يجب أن يكون نص JSON صالح"
+  },
+  "validation.datetime": {
+    "message": "{value} يجب أن يكون تاريخ/وقت صالح"
+  },
+  "validation.default": {
+    "message": "{value} فشل في التحقق من {tag}"
+  },
+  "validation.failed": {
+    "message": "الطلب غير صالح"
+  }
+} 

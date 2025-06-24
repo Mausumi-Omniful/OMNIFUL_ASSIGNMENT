@@ -1,0 +1,9 @@
+# This file defines ownership of code in the repository.
+# Each line is a file pattern followed by one or more owners.
+# The last matching pattern takes the most precedence.
+
+# Permissions package specific approvers
+/permissions/ @omniful/backend-team
+
+# All other packages approvers
+/* @omniful/core-team

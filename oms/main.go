@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"time"
-    "oms/utils"
 	"oms/controllers"
 	"oms/database"
 	"oms/routes"
+	"oms/utils"
+	"os"
+	"time"
+
 	"github.com/joho/godotenv"
 	"github.com/omniful/go_commons/http"
 	"github.com/omniful/go_commons/i18n"
@@ -20,8 +21,7 @@ func main() {
 	_ = godotenv.Load()
 	_ = i18n.Initialize(i18n.WithRootPath("./localization"))
 
-
-//    config
+	//    config
 	bucketName := getEnvOrDefault("S3_BUCKET_NAME", "order-csv-bucket")
 	s3Endpoint := getEnvOrDefault("AWS_S3_ENDPOINT", "http://localhost:4566")
 	sqsEndpoint := getEnvOrDefault("AWS_SQS_ENDPOINT", "http://localhost:4566")
@@ -34,9 +34,6 @@ func main() {
 	mongoURI := getEnvOrDefault("MONGODB_URI", "mongodb://myuser:mypassword@localhost:27018/mydb?authSource=admin")
 	mongoDBName := getEnvOrDefault("MONGODB_DB_NAME", "mydb")
 
-
-
-
 	// mongodb
 	mongoDB, err := database.NewDatabase(context.Background(), mongoURI, mongoDBName)
 	if err != nil {
@@ -46,14 +43,9 @@ func main() {
 
 	orderRepo := database.NewOrderRepository(mongoDB)
 
-
-
 	// imsurl
 	imsBaseURL := getEnvOrDefault("IMS_BASE_URL", "http://localhost:8084")
 	imsClient := utils.NewIMSClient(imsBaseURL)
-
-
-
 
 	// s3upload
 	s3Uploader, err := utils.NewS3Uploader(bucketName, s3Endpoint, awsRegion)
@@ -62,15 +54,12 @@ func main() {
 		return
 	}
 
-
 	// sqspublisher
 	sqsPublisher, err := utils.NewSQSPublisher(queueName, sqsEndpoint, awsRegion)
 	if err != nil {
 		fmt.Printf("SQS publish init error: %v\n", err)
 		return
 	}
-
-
 
 	// kafkaproducer
 	kafkaProducer, err := utils.NewKafkaProducer(kafkaBrokers, kafkaTopic)
@@ -122,8 +111,6 @@ func main() {
 		}()
 	}
 
-
-
 	// server
 	server := http.InitializeServer(
 		":8086",
@@ -141,7 +128,12 @@ func main() {
 
 	routes.RegisterOrderRoutes(server, orderController)
 
+	// Serve the webhook events HTML page
+	server.StaticFile("/webhook/events", "./webhook/events.html")
+
 	fmt.Println("OMS Service Ready")
+
+	database.SetGlobalDatabase(mongoDB)
 
 	if err := server.StartServer("oms-service"); err != nil {
 		fmt.Printf("HTTP server start error: %v\n", err)

@@ -37,6 +37,10 @@ func CreateSKU(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "SKU created", "sku": sku})
 }
 
+
+
+
+
 // GetSKUs
 func GetSKUs(c *gin.Context) {
 	var skus []models.SKU
@@ -85,6 +89,10 @@ func GetSKUs(c *gin.Context) {
 	})
 }
 
+
+
+
+
 // UpdateSKU
 func UpdateSKU(c *gin.Context) {
 	id := c.Param("id")
@@ -120,6 +128,10 @@ func UpdateSKU(c *gin.Context) {
 	}()
 	c.JSON(200, sku)
 }
+
+
+
+
 
 // DeleteSKU
 func DeleteSKU(c *gin.Context) {

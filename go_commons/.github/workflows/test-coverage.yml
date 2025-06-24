@@ -1,0 +1,55 @@
+name: "Coverage Report"
+on:
+  push:
+    branches: [ "master" ]
+    paths-ignore:
+      - "permissions/**"
+  pull_request:
+    branches: [ "master" ]
+    paths-ignore:
+      - "permissions/**"
+permissions:
+  contents: write
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            go.mod
+      - name: test
+        run: make test
+      - name: check test coverage
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: ./.github/.testcoverage.yml
+          git-branch: badges
+          git-token: ${{ github.ref_name == 'master' && secrets.GITHUB_TOKEN || '' }}
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage
+          path: coverage.out
+  code_coverage:
+    name: "Code coverage report"
+    if: github.event_name == 'pull_request' # Do not run when workflow is triggered by push to main branch
+    runs-on: ubuntu-latest
+    needs: test # Depends on the artifact uploaded by the "unit_tests" job
+    permissions:
+      contents:      read
+      actions:       read  # to download code coverage results from "test" job
+      pull-requests: write # write permission needed to comment on PR
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - uses: fgrosse/go-coverage-report@v1.2.0 # Consider using a Git revision for maximum security
+        with:
+          coverage-artifact-name: "code-coverage" # can be omitted if you used this default value
+          coverage-file-name: "coverage.out" # can be omitted if you used this default value

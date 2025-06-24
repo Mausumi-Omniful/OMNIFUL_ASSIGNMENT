@@ -26,8 +26,6 @@ type SQSMessage struct {
 	GroupID   string `json:"group_id"`
 }
 
-
-
 func NewSQSPublisher(queueName, endpoint, region string) (*SQSPublisherImpl, error) {
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "test")
@@ -91,7 +89,6 @@ func NewSQSPublisher(queueName, endpoint, region string) (*SQSPublisherImpl, err
 
 
 
-
 func (s *SQSPublisherImpl) PublishS3Path(ctx context.Context, s3Path string) error {
 	requestID := uuid.New().String()
 
@@ -124,9 +121,6 @@ func (s *SQSPublisherImpl) PublishS3Path(ctx context.Context, s3Path string) err
 	fmt.Println("FIFO message sent")
 	return nil
 }
-
-
-
 
 func (s *SQSPublisherImpl) GetQueueName() string {
 	return s.queueName

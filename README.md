@@ -164,6 +164,7 @@ IMS_BASE_URL=http://localhost:8084
 | `GET` | `/orders/` | List orders |
 | `GET` | `/orders/:id` | Get order by ID |
 | `PUT` | `/orders/:id/status` | Update order status |
+| `GET` | `/api/v1/webhook/events` | List available webhook event types |
 
 ## 🧪 Testing
 
