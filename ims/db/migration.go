@@ -1,27 +1,26 @@
 package db
 
 import (
+	"context"
 	"log"
-	"os"
 
+	"github.com/omniful/go_commons/config"
 	"github.com/omniful/go_commons/db/sql/migration"
 )
 
-
-func RunMigrations() {
+func RunMigrations(ctx context.Context) {
 	dbURL := migration.BuildSQLDBURL(
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
+		config.GetString(ctx, "DB_HOST"),
+		config.GetString(ctx, "DB_PORT"),
+		config.GetString(ctx, "DB_NAME"),
+		config.GetString(ctx, "DB_USER"),
+		config.GetString(ctx, "DB_PASSWORD"),
 	)
 
-	
-	migrationPath:="file://migrations"
+	migrationPath := "file://migrations"
 
-	migrator,err:= migration.InitializeMigrate(migrationPath, dbURL)
-	if err!= nil {
+	migrator, err := migration.InitializeMigrate(migrationPath, dbURL)
+	if err != nil {
 		log.Fatalf("Failed to initialize migrator: %v", err)
 	}
 

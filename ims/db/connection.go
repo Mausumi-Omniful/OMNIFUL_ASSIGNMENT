@@ -1,24 +1,25 @@
 package db
 
 import (
+	"context"
 	"errors"
-	"os"
+
+	"github.com/omniful/go_commons/config"
 	"github.com/omniful/go_commons/db/sql/postgres"
 )
 
 var DB *postgres.DbCluster
 
-func InitPostgres() error{
+func InitPostgres(ctx context.Context) error {
 	master := postgres.DBConfig{
-		Host: os.Getenv("DB_HOST"),
-		Port: os.Getenv("DB_PORT"),
-		Username: os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		Dbname: os.Getenv("DB_NAME"),
+		Host:     config.GetString(ctx, "DB_HOST"),
+		Port:     config.GetString(ctx, "DB_PORT"),
+		Username: config.GetString(ctx, "DB_USER"),
+		Password: config.GetString(ctx, "DB_PASSWORD"),
+		Dbname:   config.GetString(ctx, "DB_NAME"),
 	}
 
-	
-	if master.Host=="" || master.Port=="" || master.Username=="" || master.Password=="" || master.Dbname=="" {
+	if master.Host == "" || master.Port == "" || master.Username == "" || master.Password == "" || master.Dbname == "" {
 		return errors.New("missing DB config")
 	}
 

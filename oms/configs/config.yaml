@@ -1,0 +1,19 @@
+# OMS Service Configuration
+
+# MongoDB Configuration
+MONGODB_URI: mongodb://myuser:mypassword@localhost:27018/mydb?authSource=admin
+MONGODB_DB_NAME: mydb
+
+# AWS/LocalStack Configuration
+AWS_REGION: us-east-1
+AWS_S3_ENDPOINT: http://localhost:4566
+AWS_SQS_ENDPOINT: http://localhost:4566
+S3_BUCKET_NAME: order-csv-bucket
+CREATE_BULK_ORDER_QUEUE_NAME: CreateBulkOrder
+
+# Kafka Configuration
+KAFKA_BROKERS: localhost:9092
+KAFKA_ORDER_TOPIC: order.created
+
+# IMS Service Configuration
+IMS_BASE_URL: http://localhost:8084 

@@ -3,22 +3,17 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/omniful/go_commons/config"
 	"github.com/omniful/go_commons/i18n"
 )
 
 const (
-	APIKeyHeader       = "X-API-Key"
+	APIKeyHeader        = "X-API-Key"
 	AuthorizationHeader = "Authorization"
 )
-
-
-
-
-
 
 // AuthMiddleware
 func AuthMiddleware() gin.HandlerFunc {
@@ -36,7 +31,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		expectedAPIKey := os.Getenv("OMS_API_KEY")
+		expectedAPIKey := config.GetString(c.Request.Context(), "OMS_API_KEY")
 		if expectedAPIKey == "" {
 			expectedAPIKey = "oms-dev-key-2025"
 		}
@@ -66,7 +61,3 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-
-
-

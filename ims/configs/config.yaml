@@ -1,0 +1,12 @@
+# IMS Service Configuration
+
+# Database Configuration
+DB_HOST: localhost
+DB_PORT: 5434
+DB_USER: postgres
+DB_PASSWORD: postgres
+DB_NAME: postgres
+
+# Redis Configuration
+REDIS_HOST: localhost
+REDIS_PORT: 6380 
