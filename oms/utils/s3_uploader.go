@@ -4,45 +4,38 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	
+	"os"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	commons3 "github.com/omniful/go_commons/s3"
 )
 
 type S3UploaderImpl struct {
-	client *s3.S3
+	client *s3.Client
 	bucket string
 }
 
 
 
 
-
 func NewS3Uploader(bucket, endpoint, region string) (*S3UploaderImpl, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region:           aws.String(region),
-		Endpoint:         aws.String(endpoint),
-		S3ForcePathStyle: aws.Bool(true),
-		DisableSSL:       aws.Bool(true),
-		Credentials:      credentials.NewStaticCredentials("test", "test", ""),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("AWS session error: %w", err)
+	if endpoint != "" {
+		os.Setenv("AWS_S3_ENDPOINT", endpoint)
 	}
 
-	s3Client := s3.New(sess)
+	client, err := commons3.NewDefaultAWSS3Client()
+	if err != nil {
+		return nil, fmt.Errorf("AWS client error: %w", err)
+	}
 
-	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
-		Bucket: aws.String(bucket),
+	_, err = client.HeadBucket(context.Background(), &s3.HeadBucketInput{
+		Bucket: &bucket,
 	})
 	if err != nil {
 		fmt.Println("Creating bucket:", bucket)
-		_, err = s3Client.CreateBucket(&s3.CreateBucketInput{
-			Bucket: aws.String(bucket),
+		_, err = client.CreateBucket(context.Background(), &s3.CreateBucketInput{
+			Bucket: &bucket,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("bucket creation error: %w", err)
@@ -53,10 +46,11 @@ func NewS3Uploader(bucket, endpoint, region string) (*S3UploaderImpl, error) {
 	}
 
 	return &S3UploaderImpl{
-		client: s3Client,
+		client: client,
 		bucket: bucket,
 	}, nil
 }
+
 
 
 
@@ -79,11 +73,12 @@ func (s *S3UploaderImpl) UploadFile(ctx context.Context, fileContent []byte, fil
 		fmt.Println("Warning: file content is empty")
 	}
 
-	_, err := s.client.PutObjectWithContext(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(s.bucket),
-		Key:         aws.String(key),
+	contentType := "text/csv"
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      &s.bucket,
+		Key:         &key,
 		Body:        bytes.NewReader(fileContent),
-		ContentType: aws.String("text/csv"),
+		ContentType: &contentType,
 	})
 	if err != nil {
 		return "", fmt.Errorf("upload error: %w", err)
@@ -93,8 +88,3 @@ func (s *S3UploaderImpl) UploadFile(ctx context.Context, fileContent []byte, fil
 	fmt.Println("Upload complete:", s3Path)
 	return s3Path, nil
 }
-
-
-
-
-
