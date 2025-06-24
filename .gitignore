@@ -76,7 +76,5 @@ coverage.html
 # Air live reload
 tmp/
 
-# Go Commons library
-go_commons/
 
 

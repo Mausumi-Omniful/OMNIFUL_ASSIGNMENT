@@ -15,7 +15,7 @@ import (
 )
 
 func invalidateInventoryCache(ctx context.Context) {
-	// Clear all inventory cache keys
+	
 	cacheKeys := []string{
 		"inventory:all",
 		"inventory::",
@@ -28,8 +28,7 @@ func invalidateInventoryCache(ctx context.Context) {
 		redisclient.Client.Del(ctx, key)
 	}
 
-	// Also clear any pattern-based cache keys
-	// Note: This is a simple approach - in production you might want to use Redis SCAN
+	
 	redisclient.Client.Set(ctx, "inventory:clear", "", 1*time.Second)
 }
 
