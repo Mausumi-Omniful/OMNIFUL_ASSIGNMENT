@@ -165,6 +165,10 @@ func (s *SQSConsumerImpl) processMessage(ctx context.Context, message *sqs.Messa
 	return nil
 }
 
+
+
+
+
 func (s *SQSConsumerImpl) deleteMessage(message *sqs.Message) error {
 	_, err := s.client.DeleteMessage(&sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(s.queueURL),
