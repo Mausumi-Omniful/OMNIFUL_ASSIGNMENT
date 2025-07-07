@@ -15,5 +15,11 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-      - name: Run tests
-        run: go test ./... -v 
+      - name: Run IMS tests
+        run: |
+          cd ims
+          go test ./... -v
+      - name: Run OMS tests
+        run: |
+          cd ../oms
+          go test ./... -v 
