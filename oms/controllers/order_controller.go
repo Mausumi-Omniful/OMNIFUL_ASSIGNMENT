@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	
 
 	"oms/database"
 	"oms/models"
@@ -23,9 +22,6 @@ type OrderController struct {
 	SQSPublisher *utils.SQSPublisherImpl
 	OrderRepo    *database.OrderRepository
 }
-
-
-
 
 // validatecsv
 func (h *OrderController) validateCSVContent(fileContent []byte) error {
@@ -57,7 +53,7 @@ func (h *OrderController) validateCSVContent(fileContent []byte) error {
 	if len(missingColumns) > 0 {
 		errorMsg := fmt.Sprintf("missing required columns: %s", strings.Join(missingColumns, ", "))
 		fmt.Println("ERROR:", errorMsg)
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 
 	rows, err := csvReader.ReadAll()
@@ -72,11 +68,6 @@ func (h *OrderController) validateCSVContent(fileContent []byte) error {
 	fmt.Println("CSV validation passed: found", len(rows), "data rows with required columns")
 	return nil
 }
-
-
-
-
-
 
 // uploadcsv
 func (h *OrderController) UploadCSV(c *gin.Context) {
@@ -150,10 +141,6 @@ func (h *OrderController) UploadCSV(c *gin.Context) {
 	})
 }
 
-
-
-
-
 // Listorders
 func (h *OrderController) ListOrders(c *gin.Context) {
 	filters := make(map[string]string)
@@ -211,11 +198,6 @@ func (h *OrderController) ListOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-
-
-
-
-
 // getorderbyid
 func (h *OrderController) GetOrderByID(c *gin.Context) {
 	orderID := c.Param("orderID")
@@ -250,13 +232,6 @@ func (h *OrderController) GetOrderByID(c *gin.Context) {
 		"order": order,
 	})
 }
-
-
-
-
-
-
-
 
 // updateorder
 func (h *OrderController) UpdateOrderStatus(c *gin.Context) {
@@ -301,5 +276,3 @@ func (h *OrderController) UpdateOrderStatus(c *gin.Context) {
 		"order":   order,
 	})
 }
-
-
