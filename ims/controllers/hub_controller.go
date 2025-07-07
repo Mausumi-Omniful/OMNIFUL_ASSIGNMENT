@@ -6,37 +6,33 @@ import (
 
 	"time"
 
-	"github.com/Mausumi-Omniful/ims/db"
-	"github.com/Mausumi-Omniful/ims/models"
-	"github.com/Mausumi-Omniful/ims/redisclient"
 	"github.com/gin-gonic/gin"
+	"github.com/mausumi-ghadei-omniful/ims/db"
+	"github.com/mausumi-ghadei-omniful/ims/models"
+	"github.com/mausumi-ghadei-omniful/ims/redisclient"
 )
 
 // CreateHub
 func CreateHub(c *gin.Context) {
 	var hub models.Hub
 
-	// Parse JSON request
 	err := c.ShouldBindJSON(&hub)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Validate hub data
 	if err := hub.Validate(); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Create hub in database
 	result := db.DB.GetMasterDB(c.Request.Context()).Create(&hub)
 	if result.Error != nil {
 		c.JSON(500, gin.H{"error": "Failed to create hub"})
 		return
 	}
 
-	// Update cache in background
 	go func() {
 		var updated []models.Hub
 		db.DB.GetMasterDB(context.Background()).Find(&updated)

@@ -1,10 +1,9 @@
-module github.com/Mausumi-Omniful/ims
+module github.com/mausumi-ghadei-omniful/ims
 
 go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.10.1
-	github.com/joho/godotenv v1.5.1
 	github.com/omniful/go_commons v0.6.24
 	gorm.io/gorm v1.30.0
 )

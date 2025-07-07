@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/Mausumi-Omniful/ims/db"
-	"github.com/Mausumi-Omniful/ims/redisclient"
-	"github.com/Mausumi-Omniful/ims/routes"
+	"github.com/mausumi-ghadei-omniful/ims/db"
+	"github.com/mausumi-ghadei-omniful/ims/redisclient"
+	"github.com/mausumi-ghadei-omniful/ims/routes"
 
 	"github.com/omniful/go_commons/config"
 	"github.com/omniful/go_commons/http"

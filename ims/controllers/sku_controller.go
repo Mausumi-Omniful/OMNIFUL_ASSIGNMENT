@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/Mausumi-Omniful/ims/db"
-	"github.com/Mausumi-Omniful/ims/models"
-	"github.com/Mausumi-Omniful/ims/redisclient"
 	"github.com/gin-gonic/gin"
+	"github.com/mausumi-ghadei-omniful/ims/db"
+	"github.com/mausumi-ghadei-omniful/ims/models"
+	"github.com/mausumi-ghadei-omniful/ims/redisclient"
 )
 
 // CreateSKU
@@ -36,10 +36,6 @@ func CreateSKU(c *gin.Context) {
 
 	c.JSON(200, gin.H{"message": "SKU created", "sku": sku})
 }
-
-
-
-
 
 // GetSKUs
 func GetSKUs(c *gin.Context) {
@@ -89,10 +85,6 @@ func GetSKUs(c *gin.Context) {
 	})
 }
 
-
-
-
-
 // UpdateSKU
 func UpdateSKU(c *gin.Context) {
 	id := c.Param("id")
@@ -128,10 +120,6 @@ func UpdateSKU(c *gin.Context) {
 	}()
 	c.JSON(200, sku)
 }
-
-
-
-
 
 // DeleteSKU
 func DeleteSKU(c *gin.Context) {

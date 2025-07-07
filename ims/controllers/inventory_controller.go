@@ -7,15 +7,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Mausumi-Omniful/ims/db"
-	"github.com/Mausumi-Omniful/ims/models"
-	"github.com/Mausumi-Omniful/ims/redisclient"
 	"github.com/gin-gonic/gin"
+	"github.com/mausumi-ghadei-omniful/ims/db"
+	"github.com/mausumi-ghadei-omniful/ims/models"
+	"github.com/mausumi-ghadei-omniful/ims/redisclient"
 	"gorm.io/gorm/clause"
 )
 
 func invalidateInventoryCache(ctx context.Context) {
-	
+
 	cacheKeys := []string{
 		"inventory:all",
 		"inventory::",
@@ -28,7 +28,6 @@ func invalidateInventoryCache(ctx context.Context) {
 		redisclient.Client.Del(ctx, key)
 	}
 
-	
 	redisclient.Client.Set(ctx, "inventory:clear", "", 1*time.Second)
 }
 
@@ -60,10 +59,9 @@ func GetInventories(c *gin.Context) {
 	var inv []models.Inventory
 
 	ctx := context.Background()
-    sku := c.Query("sku")
+	sku := c.Query("sku")
 	location := c.Query("location")
 
-	
 	var cacheKey string
 	if sku == "" && location == "" {
 		cacheKey = "inventory:all"
@@ -117,11 +115,6 @@ func GetInventories(c *gin.Context) {
 	})
 }
 
-
-
-
-
-
 // UpdateInventory
 func UpdateInventory(c *gin.Context) {
 	id := c.Param("id")
@@ -156,9 +149,6 @@ func UpdateInventory(c *gin.Context) {
 	c.JSON(http.StatusOK, inventory)
 }
 
-
-
-
 // DeleteInventory
 func DeleteInventory(c *gin.Context) {
 	id := c.Param("id")
@@ -173,9 +163,6 @@ func DeleteInventory(c *gin.Context) {
 
 	c.JSON(200, gin.H{"message": "Inventory deleted successfully"})
 }
-
-
-
 
 // UpsertInventory
 func UpsertInventory(c *gin.Context) {
@@ -211,11 +198,6 @@ func UpsertInventory(c *gin.Context) {
 		"item":    inv,
 	})
 }
-
-
-
-
-
 
 // ReduceInventory
 func ReduceInventory(c *gin.Context) {
@@ -269,7 +251,7 @@ func ReduceInventory(c *gin.Context) {
 		})
 		return
 	}
-	newQuantity:= inventory.Quantity-request.Quantity
+	newQuantity := inventory.Quantity - request.Quantity
 	updateResult := tx.Model(&inventory).Update("quantity", newQuantity)
 	if updateResult.Error != nil {
 		tx.Rollback()

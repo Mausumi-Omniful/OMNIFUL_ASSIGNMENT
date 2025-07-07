@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/Mausumi-Omniful/ims/controllers"
+	"github.com/mausumi-ghadei-omniful/ims/controllers"
 	"github.com/omniful/go_commons/http"
 )
 

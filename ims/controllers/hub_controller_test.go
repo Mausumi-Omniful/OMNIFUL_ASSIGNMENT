@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Mausumi-Omniful/ims/models"
 	"github.com/gin-gonic/gin"
+	"github.com/mausumi-ghadei-omniful/ims/models"
 )
 
 type mockHubStore struct{}
