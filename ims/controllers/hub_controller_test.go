@@ -20,6 +20,9 @@ func (m *mockHubStore) GetHubs() ([]models.Hub, error) {
 func (m *mockHubStore) UpdateHub(id string, hub *models.Hub) error { return nil }
 func (m *mockHubStore) DeleteHub(id string) error                  { return nil }
 
+
+
+
 func TestHubHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	store := &mockHubStore{}
@@ -61,6 +64,12 @@ func TestHubHandlers(t *testing.T) {
 		}
 		c.JSON(200, gin.H{"message": "Hub deleted"})
 	})
+
+
+
+
+
+
 
 	tests := []struct {
 		name       string

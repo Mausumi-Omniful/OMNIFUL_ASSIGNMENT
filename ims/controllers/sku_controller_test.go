@@ -28,6 +28,9 @@ func (m *mockSKUStore) GetSKUs() ([]SKU, error) {
 func (m *mockSKUStore) UpdateSKU(id string, sku *SKU) error { return nil }
 func (m *mockSKUStore) DeleteSKU(id string) error           { return nil }
 
+
+
+
 func TestSKUHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	store := &mockSKUStore{}
@@ -70,6 +73,12 @@ func TestSKUHandlers(t *testing.T) {
 		c.JSON(200, gin.H{"message": "SKU deleted"})
 	})
 
+
+
+
+
+
+	
 	tests := []struct {
 		name       string
 		method     string

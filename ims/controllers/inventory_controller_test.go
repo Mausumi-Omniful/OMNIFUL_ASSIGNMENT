@@ -29,6 +29,9 @@ func (m *mockInventoryStore) GetInventories() ([]Inventory, error) {
 func (m *mockInventoryStore) UpdateInventory(id string, inv *Inventory) error { return nil }
 func (m *mockInventoryStore) DeleteInventory(id string) error                 { return nil }
 
+
+
+
 func TestInventoryHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	store := &mockInventoryStore{}
@@ -70,6 +73,13 @@ func TestInventoryHandlers(t *testing.T) {
 		}
 		c.JSON(200, gin.H{"message": "Inventory deleted"})
 	})
+
+
+
+
+
+
+
 
 	tests := []struct {
 		name       string
