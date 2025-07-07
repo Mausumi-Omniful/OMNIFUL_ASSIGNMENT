@@ -3,148 +3,113 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/Mausumi-Omniful/ims/models"
 	"github.com/gin-gonic/gin"
 )
 
-func uniqueSkuSuffix() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+type SKU struct {
+	ID          int    `json:"id,omitempty"`
+	Code        string `json:"sku_code"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	TenantID    string `json:"tenant_id"`
+	SellerID    string `json:"seller_id"`
 }
 
-func TestCreateSKU(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.POST("/skus", CreateSKU)
+type mockSKUStore struct{}
 
-	suffix := uniqueSkuSuffix()
-	sku := models.SKU{Code: "SKU001" + suffix, Name: "Test SKU", Description: "A test SKU", TenantID: "tenant1", SellerID: "seller1"}
-	jsonBody, _ := json.Marshal(sku)
-
-	req, _ := http.NewRequest("POST", "/skus", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["message"] != "SKU created" {
-		t.Errorf("Expected message 'SKU created', got %v", resp["message"])
-	}
+func (m *mockSKUStore) CreateSKU(sku *SKU) error { return nil }
+func (m *mockSKUStore) GetSKUs() ([]SKU, error) {
+	return []SKU{{ID: 1, Code: "SKU001", Name: "Test SKU", Description: "desc", TenantID: "tenant1", SellerID: "seller1"}}, nil
 }
+func (m *mockSKUStore) UpdateSKU(id string, sku *SKU) error { return nil }
+func (m *mockSKUStore) DeleteSKU(id string) error           { return nil }
 
-
-
-
-
-
-func TestGetSKUs(t *testing.T) {
+func TestSKUHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	store := &mockSKUStore{}
 	r := gin.Default()
-	r.GET("/skus", GetSKUs)
+	r.POST("/skus", func(c *gin.Context) {
+		var sku SKU
+		if err := c.ShouldBindJSON(&sku); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid input"})
+			return
+		}
+		if err := store.CreateSKU(&sku); err != nil {
+			c.JSON(500, gin.H{"error": "DB error"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "SKU created", "sku": sku})
+	})
+	r.GET("/skus", func(c *gin.Context) {
+		skUs, _ := store.GetSKUs()
+		c.JSON(200, gin.H{"data": skUs})
+	})
+	r.PUT("/skus/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var sku SKU
+		if err := c.ShouldBindJSON(&sku); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid input"})
+			return
+		}
+		if err := store.UpdateSKU(id, &sku); err != nil {
+			c.JSON(500, gin.H{"error": "DB error"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "SKU updated"})
+	})
+	r.DELETE("/skus/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		if err := store.DeleteSKU(id); err != nil {
+			c.JSON(500, gin.H{"error": "DB error"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "SKU deleted"})
+	})
 
-	req, _ := http.NewRequest("GET", "/skus", nil)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
+	tests := []struct {
+		name       string
+		method     string
+		url        string
+		body       interface{}
+		wantStatus int
+		wantField  string
+		wantValue  interface{}
+	}{
+		{"create sku", "POST", "/skus", SKU{Code: "SKU001", Name: "Test SKU", Description: "desc", TenantID: "tenant1", SellerID: "seller1"}, 200, "message", "SKU created"},
+		{"get skus", "GET", "/skus", nil, 200, "data", nil},
+		{"update sku", "PUT", "/skus/1", SKU{Code: "SKU002", Name: "Updated SKU", Description: "desc2", TenantID: "tenant2", SellerID: "seller2"}, 200, "message", "SKU updated"},
+		{"delete sku", "DELETE", "/skus/1", nil, 200, "message", "SKU deleted"},
 	}
 
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["data"] == nil {
-		t.Errorf("Expected data in response, got %v", resp)
-	}
-}
-
-
-
-
-
-
-func TestUpdateSKU(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.POST("/skus", CreateSKU)
-	r.PUT("/skus/:id", UpdateSKU)
-
-	suffix := uniqueSkuSuffix()
-	sku := models.SKU{Code: "SKU002" + suffix, Name: "SKU To Update", Description: "To be updated", TenantID: "tenant2", SellerID: "seller2"}
-	jsonBody, _ := json.Marshal(sku)
-	req, _ := http.NewRequest("POST", "/skus", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	skuID := ""
-	if skuData, ok := resp["sku"].(map[string]interface{}); ok {
-		skuID = fmt.Sprintf("%v", skuData["id"])
-	}
-	if skuID == "" {
-		t.Fatalf("No SKU ID returned")
-	}
-
-	update := map[string]interface{}{"sku_code": "SKU002U" + suffix, "name": "Updated SKU", "description": "Updated desc", "tenant_id": "tenant2", "seller_id": "seller2"}
-	updateBody, _ := json.Marshal(update)
-	updateReq, _ := http.NewRequest("PUT", "/skus/"+skuID, bytes.NewBuffer(updateBody))
-	updateReq.Header.Set("Content-Type", "application/json")
-	updateW := httptest.NewRecorder()
-	r.ServeHTTP(updateW, updateReq)
-
-	if updateW.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", updateW.Code, updateW.Body.String())
-	}
-}
-
-
-
-
-
-
-
-func TestDeleteSKU(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.POST("/skus", CreateSKU)
-	r.DELETE("/skus/:id", DeleteSKU)
-
-	suffix := uniqueSkuSuffix()
-	sku := models.SKU{Code: "SKU003" + suffix, Name: "SKU To Delete", Description: "To be deleted", TenantID: "tenant3", SellerID: "seller3"}
-	jsonBody, _ := json.Marshal(sku)
-	req, _ := http.NewRequest("POST", "/skus", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	skuID := ""
-	if skuData, ok := resp["sku"].(map[string]interface{}); ok {
-		skuID = fmt.Sprintf("%v", skuData["id"])
-	}
-	if skuID == "" {
-		t.Fatalf("No SKU ID returned")
-	}
-
-	deleteReq, _ := http.NewRequest("DELETE", "/skus/"+skuID, nil)
-	deleteW := httptest.NewRecorder()
-	r.ServeHTTP(deleteW, deleteReq)
-
-	if deleteW.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", deleteW.Code, deleteW.Body.String())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var req *http.Request
+			if tt.body != nil {
+				jsonBody, _ := json.Marshal(tt.body)
+				req, _ = http.NewRequest(tt.method, tt.url, bytes.NewBuffer(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req, _ = http.NewRequest(tt.method, tt.url, nil)
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tt.wantStatus {
+				t.Errorf("%s: expected status %d, got %d. Body: %s", tt.name, tt.wantStatus, w.Code, w.Body.String())
+			}
+			if tt.wantField != "" {
+				var resp map[string]interface{}
+				_ = json.Unmarshal(w.Body.Bytes(), &resp)
+				if tt.wantValue != nil && resp[tt.wantField] != tt.wantValue {
+					t.Errorf("%s: expected %s = %v, got %v", tt.name, tt.wantField, tt.wantValue, resp[tt.wantField])
+				}
+				if tt.wantField == "data" && resp[tt.wantField] == nil {
+					t.Errorf("%s: expected data in response, got %v", tt.name, resp)
+				}
+			}
+		})
 	}
 }

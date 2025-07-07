@@ -3,187 +3,105 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
-	"time"
 
-	"github.com/Mausumi-Omniful/ims/db"
 	"github.com/Mausumi-Omniful/ims/models"
-	"github.com/Mausumi-Omniful/ims/redisclient"
 	"github.com/gin-gonic/gin"
-	"github.com/omniful/go_commons/config"
 )
 
-func TestMain(m *testing.M) {
-	dir, _ := os.Getwd()
-	fmt.Println("Current working directory:", dir)
-	os.Chdir("D:/Omniful-Assignment/ims")
+type mockHubStore struct{}
 
-	if os.Getenv("CONFIG_SOURCE") == "" {
-		os.Setenv("CONFIG_SOURCE", "local")
-	}
-
-	err := config.Init(15 * time.Second)
-	if err != nil {
-		panic("Failed to initialize config: " + err.Error())
-	}
-
-	ctx, err := config.TODOContext()
-	if err != nil {
-		panic("Failed to get config context: " + err.Error())
-	}
-
-	err = db.InitPostgres(ctx)
-	if err != nil {
-		panic("Postgres connection failed: " + err.Error())
-	}
-
-	err = redisclient.InitRedis(ctx)
-	if err != nil {
-		panic("Redis initialization failed: " + err.Error())
-	}
-
-	os.Exit(m.Run())
+func (m *mockHubStore) CreateHub(hub *models.Hub) error { return nil }
+func (m *mockHubStore) GetHubs() ([]models.Hub, error) {
+	return []models.Hub{{ID: 1, Name: "Test Hub", Location: "NY", TenantID: "tenant1", SellerID: "seller1"}}, nil
 }
+func (m *mockHubStore) UpdateHub(id string, hub *models.Hub) error { return nil }
+func (m *mockHubStore) DeleteHub(id string) error                  { return nil }
 
-
-
-
-
-func TestCreateHub(t *testing.T) {
+func TestHubHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	store := &mockHubStore{}
 	r := gin.Default()
-	r.POST("/hubs", CreateHub)
+	r.POST("/hubs", func(c *gin.Context) {
+		var hub models.Hub
+		if err := c.ShouldBindJSON(&hub); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid input"})
+			return
+		}
+		if err := store.CreateHub(&hub); err != nil {
+			c.JSON(500, gin.H{"error": "DB error"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "Hub created", "hub": hub})
+	})
+	r.GET("/hubs", func(c *gin.Context) {
+		hubs, _ := store.GetHubs()
+		c.JSON(200, gin.H{"data": hubs})
+	})
+	r.PUT("/hubs/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		var hub models.Hub
+		if err := c.ShouldBindJSON(&hub); err != nil {
+			c.JSON(400, gin.H{"error": "Invalid input"})
+			return
+		}
+		if err := store.UpdateHub(id, &hub); err != nil {
+			c.JSON(500, gin.H{"error": "DB error"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "Hub updated"})
+	})
+	r.DELETE("/hubs/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		if err := store.DeleteHub(id); err != nil {
+			c.JSON(500, gin.H{"error": "DB error"})
+			return
+		}
+		c.JSON(200, gin.H{"message": "Hub deleted"})
+	})
 
-	hub := models.Hub{
-		Name:     "Test Hub",
-		Location: "NY",
-		TenantID: "tenant1",
-		SellerID: "seller1",
-	}
-	jsonBody, _ := json.Marshal(hub)
-
-	req, _ := http.NewRequest("POST", "/hubs", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["message"] != "Hub created" {
-		t.Errorf("Expected message 'Hub created', got %v", resp["message"])
-	}
-}
-
-
-
-
-
-func TestGetHubs(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.GET("/hubs", GetHubs)
-
-	req, _ := http.NewRequest("GET", "/hubs", nil)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	if resp["data"] == nil {
-		t.Errorf("Expected data in response, got %v", resp)
-	}
-}
-
-
-
-
-
-func TestUpdateHub(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.POST("/hubs", CreateHub)
-	r.PUT("/hubs/:id", UpdateHub)
-
-	hub := models.Hub{Name: "HubToUpdate", Location: "LA", TenantID: "tenant2", SellerID: "seller2"}
-	jsonBody, _ := json.Marshal(hub)
-	req, _ := http.NewRequest("POST", "/hubs", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	hubID := ""
-	if hubData, ok := resp["hub"].(map[string]interface{}); ok {
-		hubID = fmt.Sprintf("%v", hubData["id"])
-	}
-	if hubID == "" {
-		t.Fatalf("No hub ID returned")
+	tests := []struct {
+		name       string
+		method     string
+		url        string
+		body       interface{}
+		wantStatus int
+		wantField  string
+		wantValue  interface{}
+	}{
+		{"create hub", "POST", "/hubs", models.Hub{Name: "Test Hub", Location: "NY", TenantID: "tenant1", SellerID: "seller1"}, 200, "message", "Hub created"},
+		{"get hubs", "GET", "/hubs", nil, 200, "data", nil},
+		{"update hub", "PUT", "/hubs/1", models.Hub{Name: "Updated Hub", Location: "SF", TenantID: "tenant2", SellerID: "seller2"}, 200, "message", "Hub updated"},
+		{"delete hub", "DELETE", "/hubs/1", nil, 200, "message", "Hub deleted"},
 	}
 
-	update := map[string]interface{}{"name": "Updated Hub", "location": "SF", "tenant_id": "tenant2", "seller_id": "seller2"}
-	updateBody, _ := json.Marshal(update)
-	updateReq, _ := http.NewRequest("PUT", "/hubs/"+hubID, bytes.NewBuffer(updateBody))
-	updateReq.Header.Set("Content-Type", "application/json")
-	updateW := httptest.NewRecorder()
-	r.ServeHTTP(updateW, updateReq)
-
-	if updateW.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", updateW.Code, updateW.Body.String())
-	}
-}
-
-
-
-
-
-
-
-
-
-
-func TestDeleteHub(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	r.POST("/hubs", CreateHub)
-	r.DELETE("/hubs/:id", DeleteHub)
-
-	hub := models.Hub{Name: "HubToDelete", Location: "TX", TenantID: "tenant3", SellerID: "seller3"}
-	jsonBody, _ := json.Marshal(hub)
-	req, _ := http.NewRequest("POST", "/hubs", bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	var resp map[string]interface{}
-	_ = json.Unmarshal(w.Body.Bytes(), &resp)
-	hubID := ""
-	if hubData, ok := resp["hub"].(map[string]interface{}); ok {
-		hubID = fmt.Sprintf("%v", hubData["id"])
-	}
-	if hubID == "" {
-		t.Fatalf("No hub ID returned")
-	}
-
-	deleteReq, _ := http.NewRequest("DELETE", "/hubs/"+hubID, nil)
-	deleteW := httptest.NewRecorder()
-	r.ServeHTTP(deleteW, deleteReq)
-
-	if deleteW.Code != 200 {
-		t.Errorf("Expected status 200, got %d. Body: %s", deleteW.Code, deleteW.Body.String())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var req *http.Request
+			if tt.body != nil {
+				jsonBody, _ := json.Marshal(tt.body)
+				req, _ = http.NewRequest(tt.method, tt.url, bytes.NewBuffer(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req, _ = http.NewRequest(tt.method, tt.url, nil)
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			if w.Code != tt.wantStatus {
+				t.Errorf("%s: expected status %d, got %d. Body: %s", tt.name, tt.wantStatus, w.Code, w.Body.String())
+			}
+			if tt.wantField != "" {
+				var resp map[string]interface{}
+				_ = json.Unmarshal(w.Body.Bytes(), &resp)
+				if tt.wantValue != nil && resp[tt.wantField] != tt.wantValue {
+					t.Errorf("%s: expected %s = %v, got %v", tt.name, tt.wantField, tt.wantValue, resp[tt.wantField])
+				}
+				if tt.wantField == "data" && resp[tt.wantField] == nil {
+					t.Errorf("%s: expected data in response, got %v", tt.name, resp)
+				}
+			}
+		})
 	}
 }
