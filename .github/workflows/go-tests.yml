@@ -15,6 +15,11 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
+      - name: Set up private modules auth
+        run: |
+          git config --global url."https://${GH_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: Run IMS tests
         run: |
           cd ims
