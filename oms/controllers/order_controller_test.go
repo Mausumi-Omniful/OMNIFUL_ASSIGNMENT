@@ -38,7 +38,7 @@ func TestGetOrders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
 
-	// Load config (or hardcode for test)
+	
 	mongoURI := "mongodb://myuser:mypassword@localhost:27018/mydb?authSource=admin"
 	mongoDBName := "mydb"
 	s3Bucket := "order-csv-bucket"
@@ -65,7 +65,7 @@ func TestGetOrders(t *testing.T) {
 		t.Fatalf("Failed to insert test order: %v", err)
 	}
 
-	// S3 and SQS (will connect to LocalStack)
+	// S3 and SQS 
 	s3Uploader, err := utils.NewS3Uploader(s3Bucket, s3Endpoint, awsRegion)
 	if err != nil {
 		t.Fatalf("Failed to create S3Uploader: %v", err)
@@ -101,7 +101,7 @@ func TestGetOrders(t *testing.T) {
 	}
 	orders, ok := resp["orders"].([]interface{})
 	if !ok {
-		// If response is wrapped in "data" or another field, adjust accordingly
+		
 		t.Fatalf("Response does not contain 'orders' field: %v", resp)
 	}
 	found := false

@@ -150,8 +150,6 @@ github.com/newrelic/go-agent/v3 v3.38.0 h1:Oms49R8NpCQ007UMm26dZq6qpHXGq/uDeyxlH
 github.com/newrelic/go-agent/v3 v3.38.0/go.mod h1:4QXvru0vVy/iu7mfkNHT7T2+9TC9zPGO8aUEdKqY138=
 github.com/newrelic/go-agent/v3/integrations/nrpkgerrors v1.1.0 h1:TmAihIxCqgz3v9OR19J7mK2ggEQjGdhz2FEOvszU1SI=
 github.com/newrelic/go-agent/v3/integrations/nrpkgerrors v1.1.0/go.mod h1:yXUqcAzlKNVIsSyoaI2ILdpvBeMCz3Ko/ASl4Vbg2i4=
-github.com/omniful/go_commons v0.6.23 h1:fns7Y3AfP5qWR4E5Cet9fT8J462ulxcsR7I3+vkbkw8=
-github.com/omniful/go_commons v0.6.23/go.mod h1:0AAHmAOp1jfC/oFOWuCXHHdFURyCezxiwZ0K4HRaZgY=
 github.com/omniful/go_commons v0.6.24 h1:hM+tJEt0u+sf61xyvbRvH93/mqkikhGQakHd9375Tz4=
 github.com/omniful/go_commons v0.6.24/go.mod h1:0AAHmAOp1jfC/oFOWuCXHHdFURyCezxiwZ0K4HRaZgY=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
@@ -201,8 +199,6 @@ go.uber.org/goleak v1.1.11 h1:wy28qYRKZgnJTxGxvye5/wgWr1EKjmUDGYox5mGlRlI=
 go.uber.org/goleak v1.1.11/go.mod h1:cwTWslyiVhfpKIDGSZEM2HlOvcqm+tG4zioyIeLoqMQ=
 go.uber.org/multierr v1.6.0 h1:y6IPFStTAIT5Ytl7/XYmHvzXQ7S3g/IeZW9hyZ5thw4=
 go.uber.org/multierr v1.6.0/go.mod h1:cdWPpRnG4AhwMwsgIHip0KRBQjJy5kYEpYjJxpXp9iU=
-go.uber.org/ratelimit v0.3.1 h1:K4qVE+byfv/B3tC+4nYWP7v/6SimcO7HzHekoMNBma0=
-go.uber.org/ratelimit v0.3.1/go.mod h1:6euWsTB6U/Nb3X++xEUXA8ciPJvr19Q/0h1+oDcJhRk=
 go.uber.org/zap v1.23.0 h1:OjGQ5KQDEUawVHxNwQgPpiypGHOxo2mNZsOqTak4fFY=
 go.uber.org/zap v1.23.0/go.mod h1:D+nX8jyLsMHMYrln8A0rJjFt/T/9/bGgIhAqxv5URuY=
 golang.org/x/arch v0.18.0 h1:WN9poc33zL4AzGxqf8VtpKUnGvMi8O9lhNyBMF/85qc=
